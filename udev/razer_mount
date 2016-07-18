@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# Exit on error
+set -e
+
+DRIVER=$1
+HID_DRIVER_DIR=$2
+DEVICE_ID=$3
+
+
+echo "Driver $DRIVER"
+echo "Device_ID $DEVICE_ID"
+
+if [ ! -d /sys/bus/hid/drivers/$HID_DRIVER_DIR ] ; then
+	echo "Modprobing $DRIVER"
+	modprobe $DRIVER
+	sleep 0.05
+	echo "Modprobed $DRIVER"
+fi
+
+if [ -d /sys/bus/hid/drivers/hid-generic/$DEVICE_ID ] ; then
+	# Unbind from hid
+	echo "Unbinding $DEVICE_ID from hid-generic"
+	echo -n $DEVICE_ID > /sys/bus/hid/drivers/hid-generic/unbind
+	echo "Binding $DEVICE_ID to $DRIVER"
+	echo -n $DEVICE_ID > /sys/bus/hid/drivers/$HID_DRIVER_DIR/bind
+	sleep 0.1
+	echo "Finished binding $DEVICE_ID"
+fi

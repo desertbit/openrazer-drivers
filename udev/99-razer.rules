@@ -1,0 +1,8 @@
+# Razer Keyboards
+KERNEL=="????:????:????.????", DRIVERS=="usb", SUBSYSTEMS=="usb", ATTRS{idVendor}=="1532", ATTRS{idProduct}=="0205", ENV{is_razer_kbd}="yes"    # Razer Blade Stealth 2016
+KERNEL=="????:????:????.????", DRIVERS=="usb", SUBSYSTEMS=="usb", ATTRS{idVendor}=="1532", ATTRS{idProduct}=="020f", ENV{is_razer_kbd}="yes"    # Razer Blade 14 2016
+
+# Run action
+SUBSYSTEM=="hid", DRIVER=="hid-generic", ENV{is_razer_kbd}=="yes", ATTRS{bInterfaceNumber}=="02", RUN+="razer_mount hid-razer-kbd razer-kbd $kernel"
+
+KERNEL=="event[0-9]*", SUBSYSTEM=="input"
