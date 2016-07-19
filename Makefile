@@ -1,5 +1,5 @@
 # The project version
-VERSION=1.0.0
+VERSION=0.0.1
 
 # DESTDIR is used to install into a different root directory
 DESTDIR?=/
@@ -37,13 +37,15 @@ clean:
 install: udev_install
 	@echo "\n::\033[34m Installing Razer kernel modules\033[0m"
 	@echo "====================================================="
-	@install -v -D -m 644 -g root -o root $(DRIVERDIR)/razerkbd/hid-razer-kbd.ko $(DESTDIR)/$(MODULEDIR)/hid-razer-kbd.ko
+	@install -v -D -m 644 -g root -o root $(DRIVERDIR)/hid-razer-common.ko $(DESTDIR)/$(MODULEDIR)/hid-razer-common.ko
+	@install -v -D -m 644 -g root -o root $(DRIVERDIR)/hid-razer.ko $(DESTDIR)/$(MODULEDIR)/hid-razer.ko
 
 # Remove kernel modules
 uninstall: udev_uninstall
 	@echo "\n::\033[34m Uninstalling Razer kernel modules\033[0m"
 	@echo "====================================================="
-	@rm -f $(DESTDIR)/$(MODULEDIR)/hid-razer-kbd.ko
+	@rm -f $(DESTDIR)/$(MODULEDIR)/hid-razer-common.ko
+	@rm -f $(DESTDIR)/$(MODULEDIR)/hid-razer.ko
 
 # DKMS
 install_dkms: udev_install

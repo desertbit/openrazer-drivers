@@ -27,7 +27,20 @@
 
 #include "hid-razer-common.h"
 
+//###########################//
+//### Version Information ###//
+//###########################//
 
+MODULE_AUTHOR("Roland Singer <roland.singer@desertbit.com>");
+MODULE_AUTHOR("Tim Theede <pez2001@voyagerproject.de>");
+MODULE_DESCRIPTION("USB Razer common driver");
+MODULE_LICENSE("GPL v2");
+
+
+
+//##########################//
+//### Exported Functions ###//
+//##########################//
 
 /*
  * Get an initialised razer report
@@ -47,6 +60,8 @@ struct razer_report new_razer_report(unsigned char command_class, unsigned char 
 
     return new_report;
 }
+
+EXPORT_SYMBOL_GPL(new_razer_report);
 
 
 
@@ -85,12 +100,16 @@ int razer_send_control_msg(struct usb_device *usb_dev, void const *data,
     // Free the memory again.
     kfree(buf);
 
-    if(len!=size) {
+    if(len != size) {
         printk(KERN_WARNING "razer device: device data transfer failed");
     }
 
     return ((len < 0) ? len : ((len != size) ? -EIO : 0));
 }
+
+EXPORT_SYMBOL_GPL(razer_send_control_msg);
+
+
 
 /**
  * Get a response from the razer device
@@ -121,7 +140,7 @@ int razer_get_usb_response(struct usb_device *usb_dev, uint report_index,
     // Send the request to the device.
     retval = razer_send_control_msg(usb_dev, request_report, report_index, wait_min, wait_max);
 	if (retval != 0) {
-		printk(KERN_WARNING "razer device: invalid USB repsonse. request failed: %d\n", retval);
+		printk(KERN_WARNING "razer device: invalid USB repsonse: request failed: %d\n", retval);
 		return 1;
 	}
 
@@ -139,12 +158,16 @@ int razer_get_usb_response(struct usb_device *usb_dev, uint report_index,
 
     // Error if report is wrong length
     if(len != RAZER_USB_REPORT_LEN) {
-        printk(KERN_WARNING "razer device: invalid USB repsonse. USB Report length: %d\n", len);
+        printk(KERN_WARNING "razer device: invalid USB repsonse: USB Report length: %d\n", len);
         return 1;
     }
 
     return 0;
 }
+
+EXPORT_SYMBOL_GPL(razer_get_usb_response);
+
+
 
 /**
  * Calculate the checksum for the usb message
@@ -169,12 +192,14 @@ unsigned char razer_calculate_crc(struct razer_report *report)
     return crc;
 }
 
+EXPORT_SYMBOL_GPL(razer_calculate_crc);
+
 
 
 /**
  * Print report to syslog
  */
-void razer_print_erroneous_report(struct razer_report* report, char* driver_name, char* message)
+void razer_print_err_report(struct razer_report* report, char* driver_name, char* message)
 {
     printk(KERN_WARNING "%s: %s. Start Marker: %02x id: %02x Num Params: %02x Reserved: %02x Command: %02x Params: %02x%02x%02x%02x%02x%02x .\n",
         driver_name,
@@ -186,3 +211,5 @@ void razer_print_erroneous_report(struct razer_report* report, char* driver_name
         report->command_id.id,
         report->arguments[0], report->arguments[1], report->arguments[2], report->arguments[3], report->arguments[4], report->arguments[5]);
 }
+
+EXPORT_SYMBOL_GPL(razer_print_err_report);

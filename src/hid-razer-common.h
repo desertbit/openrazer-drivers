@@ -38,6 +38,10 @@
 //### Types ###//
 //#############//
 
+struct razer_rgb {
+    unsigned char r,g,b;
+};
+
 union transaction_id_union {
     unsigned char id;
     struct transaction_parts {
@@ -60,7 +64,7 @@ union command_id_union {
  * 0x02 Command Successful
  * 0x03 Command Failure
  * 0x04 Command No Response / Command Timeout
- * 0x05 Command Not Support
+ * 0x05 Command Not Supported
  *
  * Transaction ID used to group request-response, device useful when multiple devices are on one usb
  * Remaining Packets is the number of remaining packets in the sequence
@@ -103,7 +107,7 @@ int razer_get_usb_response(struct usb_device *usb_dev, uint report_index,
 
 unsigned char razer_calculate_crc(struct razer_report *report);
 
-void razer_print_erroneous_report(struct razer_report* report,
+void razer_print_err_report(struct razer_report* report,
     char* driver_name, char* message);
 
 
