@@ -36,8 +36,7 @@
 //###########################//
 
 MODULE_AUTHOR("Roland Singer <roland.singer@desertbit.com>");
-MODULE_AUTHOR("Tim Theede <pez2001@voyagerproject.de>");
-MODULE_DESCRIPTION("USB HID Razer Keyboard");
+MODULE_DESCRIPTION("USB HID Razer Driver");
 MODULE_LICENSE("GPL v2");
 
 
@@ -60,25 +59,6 @@ int razer_get_report(struct usb_device *usb_dev,
 {
     return razer_get_usb_response(usb_dev, 0x02, request_report, 0x02,
         response_report, RAZER_KBD_WAIT_MIN_US, RAZER_KBD_WAIT_MAX_US);
-}
-
-// Reset the keyboard.
-int razer_reset(struct usb_device *usb_dev)
-{
-    int retval;
-    struct razer_report report = new_razer_report(0x03, 0x00, 0x05);
-    report.arguments[0] = 0x01; // LED Class
-    report.arguments[1] = 0x08; // LED ID Game mode
-    report.arguments[2] = 0x00; // Off
-    report.crc = razer_calculate_crc(&report);
-
-    retval = razer_set_report(usb_dev, &report);
-    if(retval != 0) {
-        razer_print_err_report(&report, "hid-razer", "failed to reset keyboard");
-        return retval;
-    }
-
-    return 0;
 }
 
 // Get the firmware version.
@@ -179,7 +159,7 @@ int razer_set_logo(struct usb_device *usb_dev, unsigned char state)
     struct razer_report report = new_razer_report(0x03, 0x00, 0x03);
 
     if (state != 0 && state != 1) {
-        printk(KERN_WARNING "hid-razer: set_logo: logo lighting state must be either 0 or 1: got: %d", state);
+        printk(KERN_WARNING "hid-razer: set_logo: logo lighting state must be either 0 or 1: got: %d\n", state);
         return -EINVAL;
     }
 
@@ -204,7 +184,7 @@ int razer_set_fn_toggle(struct usb_device *usb_dev, unsigned char state)
     struct razer_report report = new_razer_report(0x02, 0x06, 0x02);
 
     if (state != 0 && state != 1) {
-        printk(KERN_WARNING "hid-razer: fn_toggle: toggle FN state must be either 0 or 1: got: %d", state);
+        printk(KERN_WARNING "hid-razer: fn_toggle: toggle FN state must be either 0 or 1: got: %d\n", state);
         return -EINVAL;
     }
 
@@ -216,6 +196,110 @@ int razer_set_fn_toggle(struct usb_device *usb_dev, unsigned char state)
     if(retval != 0) {
         razer_print_err_report(&report, "hid-razer", "fn_toggle: request failed");
         return retval;
+    }
+
+    return 0;
+}
+
+// Returns the row count of the keyboard.
+// On error a value smaller than 0 is returned.
+int razer_get_rows(struct usb_device *usb_dev)
+{
+    if(usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016) {
+        return RAZER_STEALTH_2016_ROWS;
+    }
+    else if(usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_14_2016) {
+        return RAZER_BLADE_14_2016_ROWS;
+    } else {
+        return -EINVAL;
+    }
+}
+
+// Returns the column count of the keyboard.
+// On error a value smaller than 0 is returned.
+int razer_get_columns(struct usb_device *usb_dev)
+{
+    if(usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016) {
+        return RAZER_STEALTH_2016_COLUMNS;
+    }
+    else if(usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_14_2016) {
+        return RAZER_BLADE_14_2016_COLUMNS;
+    } else {
+        return -EINVAL;
+    }
+}
+
+// Set the key colors for a specific row. Takes in an array of RGB bytes.
+int razer_set_key_row(struct usb_device *usb_dev, unsigned char row_index,
+    unsigned char *row_cols, size_t row_cols_len)
+{
+    int retval;
+    int rows                        = razer_get_rows(usb_dev);
+    int columns                     = razer_get_columns(usb_dev);
+    size_t row_cols_required_len    = columns * 3;
+    struct razer_report report      = new_razer_report(0x03, 0x0B, 0x00); // Set the data_size later.
+
+    if(rows < 0 || columns < 0) {
+        printk(KERN_WARNING "hid-razer: set_key_row: unsupported device\n");
+        return -EINVAL;
+    }
+
+    // Validate the input.
+    if (row_index >= rows) {
+        printk(KERN_WARNING "hid-razer: set_key_row: invalid row index: %d\n", row_index);
+        return -EINVAL;
+    }
+    if (row_cols_len != row_cols_required_len) {
+        printk(KERN_WARNING "hid-razer: set_key_row: wrong amount of RGB data provided: %lu of %lu\n",
+            row_cols_len, row_cols_required_len);
+        return -EINVAL;
+    }
+
+    report.data_size = row_cols_required_len + 4;
+    report.transaction_id.id = 0x80;    // Set a custom transaction ID.
+    report.arguments[0] = 0xFF;         // Frame ID
+    report.arguments[1] = row_index;    // Row
+    report.arguments[2] = 0x00;         // Start Index
+    report.arguments[3] = columns - 1;  // End Index (calculated to end of row)
+    memcpy(&report.arguments[4], row_cols, row_cols_required_len);
+    report.crc = razer_calculate_crc(&report);
+
+    retval = razer_set_report(usb_dev, &report);
+    if(retval != 0) {
+        razer_print_err_report(&report, "hid-razer", "set_key_row: request failed");
+        return retval;
+    }
+
+    return retval;
+}
+
+// Set the key colors for the complete keyboard. Takes in an array of RGB bytes.
+int razer_set_key_colors(struct usb_device *usb_dev,
+    unsigned char *row_cols, size_t row_cols_len)
+{
+    int i, retval;
+    int rows                        = razer_get_rows(usb_dev);
+    int columns                     = razer_get_columns(usb_dev);
+    size_t row_cols_required_len    = columns * 3 * rows;
+
+    if(columns < 0 || rows < 0 || row_cols_required_len < 0) {
+        printk(KERN_WARNING "hid-razer: set_key_colors: unsupported device\n");
+        return -EINVAL;
+    }
+
+    // Validate the input.
+    if (row_cols_len != row_cols_required_len) {
+        printk(KERN_WARNING "hid-razer: set_key_colors: wrong amount of RGB data provided: %lu of %lu\n",
+            row_cols_len, row_cols_required_len);
+        return -EINVAL;
+    }
+
+    for(i = 0; i < rows; i++) {
+        retval = razer_set_key_row(usb_dev, i, (unsigned char*)&row_cols[i*columns], columns * 3);
+        if(retval != 0) {
+            printk(KERN_WARNING "hid-razer: set_key_colors: failed to set colors for row: %d\n", i);
+            return retval;
+        }
     }
 
     return 0;
@@ -276,14 +360,14 @@ int razer_set_custom_mode(struct usb_device *usb_dev)
     return 0;
 }
 
-// Set the wave effect on the keyboard
+// Set the starlight effect on the keyboard
 // TODO: Add posibility to set custom colors and speed...
 int razer_set_starlight_mode(struct usb_device *usb_dev)
 {
     int retval;
     struct razer_report report = new_razer_report(0x03, 0x0A, 0x09);
     report.arguments[0] = 0x19; // Effect ID
-    report.arguments[1] = 0x01; // Type one color
+    report.arguments[1] = 0x02; // Type one color
     report.arguments[2] = 0x01; // Speed
 
     report.arguments[3] = 0x00; // Red 1
@@ -310,6 +394,12 @@ int razer_set_wave_mode(struct usb_device *usb_dev, unsigned char direction)
 {
     int retval;
     struct razer_report report = new_razer_report(0x03, 0x0A, 0x02);
+
+    if (direction != 1 && direction != 2) {
+        printk(KERN_WARNING "hid-razer: wave_mode: wave direction must be 1 or 2: got: %d\n", direction);
+        return -EINVAL;
+    }
+
     report.arguments[0] = 0x01; // Effect ID
     report.arguments[1] = direction; // Direction
     report.crc = razer_calculate_crc(&report);
@@ -347,7 +437,7 @@ int razer_set_reactive_mode(struct usb_device *usb_dev, struct razer_rgb *color,
     struct razer_report report = new_razer_report(0x03, 0x0A, 0x05);
 
     if (speed <= 0 || speed >= 4) {
-        printk(KERN_WARNING "hid-razer: reactive_mode: speed must be within 1-3: got: %d", speed);
+        printk(KERN_WARNING "hid-razer: reactive_mode: speed must be within 1-3: got: %d\n", speed);
         return -EINVAL;
     }
 
@@ -564,6 +654,61 @@ static ssize_t razer_attr_write_set_fn_toggle(struct device *dev,
 
 
 /*
+ * Write device file "set_key_colors"
+ * Writes the color rows on the keyboard. Takes in all the colours for the keyboard
+ */
+static ssize_t razer_attr_write_set_key_colors(struct device *dev,
+    struct device_attribute *attr, const char *buf, size_t count)
+{
+    struct usb_interface *intf = to_usb_interface(dev->parent);
+    struct usb_device *usb_dev = interface_to_usbdev(intf);
+    int retval;
+
+    retval = razer_set_none_mode(usb_dev);
+    if (retval != 0) {
+        return retval;
+    }
+
+    retval = razer_set_key_colors(usb_dev, (unsigned char*)&buf[0], count);
+    if (retval != 0) {
+        return retval;
+    }
+
+    retval = razer_set_custom_mode(usb_dev);
+    if (retval != 0) {
+        return retval;
+    }
+
+    return count;
+}
+
+
+
+/*
+ * Read device file "get_info"
+ * Return keyboard row information as string.
+ */
+static ssize_t razer_attr_read_get_info(struct device *dev,
+    struct device_attribute *attr, char *buf)
+{
+    struct usb_interface *intf  = to_usb_interface(dev->parent);
+    struct usb_device *usb_dev  = interface_to_usbdev(intf);
+    int rows                    = razer_get_rows(usb_dev);
+    int columns                 = razer_get_columns(usb_dev);
+    int colors                  = rows * columns;
+
+    if(rows < 0 || columns < 0) {
+        printk(KERN_WARNING "hid-razer: get_info: unsupported device\n");
+        return -EINVAL;
+    }
+
+    return sprintf(buf, "rows=%d\ncolumns=%d\ncolors=%d\n",
+        rows, columns, colors);
+}
+
+
+
+/*
  * Write device file "mode_none"
  * Disable keyboard effects / turns the keyboard LEDs off.
  */
@@ -595,7 +740,7 @@ static ssize_t razer_attr_write_mode_static(struct device *dev, struct device_at
     int retval;
 
     if(count != 3) {
-        printk(KERN_WARNING "hid-razer: mode static requires 3 RGB bytes");
+        printk(KERN_WARNING "hid-razer: mode static requires 3 RGB bytes\n");
         return -EINVAL;
     }
 
@@ -619,9 +764,6 @@ static ssize_t razer_attr_write_mode_custom(struct device *dev,
     struct usb_interface *intf = to_usb_interface(dev->parent);
     struct usb_device *usb_dev = interface_to_usbdev(intf);
     int retval;
-
-    // Reset the razer keyboard. Ignore errors. This is not fatal.
-    razer_reset(usb_dev);
 
     retval = razer_set_custom_mode(usb_dev);
     if (retval != 0) {
@@ -712,7 +854,7 @@ static ssize_t razer_attr_write_mode_reactive(struct device *dev,
     int retval;
 
     if (count != 4) {
-        printk(KERN_WARNING "hid-razer: mode reactive requires one speed byte followed by 3 RGB bytes");
+        printk(KERN_WARNING "hid-razer: mode reactive requires one speed byte followed by 3 RGB bytes\n");
         return -EINVAL;
     }
 
@@ -782,10 +924,12 @@ static ssize_t razer_attr_write_mode_breath(struct device *dev,
 static DEVICE_ATTR(get_serial,              0444, razer_attr_read_get_serial,           NULL);
 static DEVICE_ATTR(get_firmware_version,    0444, razer_attr_read_get_firmware_version, NULL);
 static DEVICE_ATTR(device_type,             0444, razer_attr_read_device_type,          NULL);
-static DEVICE_ATTR(brightness,              0660, razer_attr_read_brightness, razer_attr_write_brightness);
+static DEVICE_ATTR(brightness,              0664, razer_attr_read_brightness, razer_attr_write_brightness);
 
 static DEVICE_ATTR(set_logo,        0220, NULL, razer_attr_write_set_logo);
 static DEVICE_ATTR(set_fn_toggle,   0220, NULL, razer_attr_write_set_fn_toggle);
+static DEVICE_ATTR(set_key_colors,  0220, NULL, razer_attr_write_set_key_colors);
+static DEVICE_ATTR(get_info,        0444, razer_attr_read_get_info, NULL);
 
 static DEVICE_ATTR(mode_none,       0220, NULL, razer_attr_write_mode_none);
 static DEVICE_ATTR(mode_static,     0220, NULL, razer_attr_write_mode_static);
@@ -837,6 +981,12 @@ static int razer_kbd_probe(struct hid_device *hdev,
         retval = device_create_file(&hdev->dev, &dev_attr_set_fn_toggle);
         if (retval)
             return retval;
+        retval = device_create_file(&hdev->dev, &dev_attr_set_key_colors);
+        if (retval)
+            return retval;
+        retval = device_create_file(&hdev->dev, &dev_attr_get_info);
+        if (retval)
+            return retval;
 
         // Modes
         retval = device_create_file(&hdev->dev, &dev_attr_mode_none);
@@ -876,9 +1026,6 @@ static int razer_kbd_probe(struct hid_device *hdev,
         return retval;
     }
 
-    // Reset the razer device. Ignore errors. This is not fatal.
-    razer_reset(usb_dev);
-
     usb_disable_autosuspend(usb_dev);
 
     return 0;
@@ -907,6 +1054,8 @@ static void razer_kbd_disconnect(struct hid_device *hdev)
     {
         device_remove_file(&hdev->dev, &dev_attr_set_logo);
         device_remove_file(&hdev->dev, &dev_attr_set_fn_toggle);
+        device_remove_file(&hdev->dev, &dev_attr_set_key_colors);
+        device_remove_file(&hdev->dev, &dev_attr_get_info);
 
         // Modes
         device_remove_file(&hdev->dev, &dev_attr_mode_none);

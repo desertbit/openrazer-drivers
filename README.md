@@ -8,10 +8,10 @@ All notable changes to this project will be documented in the **[CHANGELOG.md](C
 
 ## Supported Devices
 
-| NAME                     | TYPE     | DRIVER SUPPORT                                                                                |
-|:-------------------------|:---------|:----------------------------------------------------------------------------------------------|
-| Razer Blade Stealth 2016 | Keyboard | brightness control, lid logo control, FN mode control, partial lighting modes, set key colors |
-| Razer Blade 14 2016      | Keyboard | brightness control, lid logo control, FN mode control, partial lighting modes, set key colors |
+| NAME                     | TYPE     | DRIVER SUPPORT                                                                            |
+|:-------------------------|:---------|:------------------------------------------------------------------------------------------|
+| Razer Blade Stealth 2016 | Keyboard | brightness control, lid logo control, FN mode control, all lighting modes, set key colors |
+| Razer Blade 14 2016      | Keyboard | brightness control, lid logo control, FN mode control, all lighting modes, set key colors |
 
 
 ## Installation
@@ -35,9 +35,7 @@ This requires recompilation on every kernel update.
 
 ## TODO
 
-- All to -EINVAL
 - razer_set_starlight_mode: Add posibility to set custom colors and speed
-- Implement missing lighting modes
 
 ## Authors
 
