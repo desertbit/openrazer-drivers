@@ -101,7 +101,7 @@ int razer_send_control_msg(struct usb_device *usb_dev, void const *data,
     // Free the memory again.
     kfree(buf);
 
-    if(len != size) {
+    if (len != size) {
         printk(KERN_WARNING "razer device: device data transfer failed");
     }
 
@@ -158,7 +158,7 @@ int razer_get_usb_response(struct usb_device *usb_dev, uint report_index,
     usleep_range(wait_min, wait_max);
 
     // Error if report is wrong length
-    if(len != RAZER_USB_REPORT_LEN) {
+    if (len != RAZER_USB_REPORT_LEN) {
         printk(KERN_WARNING "razer device: invalid USB repsonse: USB Report length: %d\n", len);
         return 1;
     }
