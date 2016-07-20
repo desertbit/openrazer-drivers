@@ -33,10 +33,6 @@ This requires recompilation on every kernel update.
     make DESTDIR=/ install
 ```
 
-## TODO
-
-- razer_set_starlight_mode: Add posibility to set custom colors and speed
-
 ## Authors
 
 A list of all authors contributed to this project can be found in the **[AUTHORS.md](AUTHORS.md)** file.

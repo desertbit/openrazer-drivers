@@ -38,7 +38,7 @@
 MODULE_AUTHOR("Roland Singer <roland.singer@desertbit.com>");
 MODULE_DESCRIPTION("USB HID Razer Driver");
 MODULE_LICENSE("GPL v2");
-
+MODULE_VERSION("1.0.0");
 
 
 //########################//
@@ -360,35 +360,6 @@ int razer_set_custom_mode(struct usb_device *usb_dev)
     return 0;
 }
 
-// Set the starlight effect on the keyboard
-// TODO: Add posibility to set custom colors and speed...
-int razer_set_starlight_mode(struct usb_device *usb_dev)
-{
-    int retval;
-    struct razer_report report = new_razer_report(0x03, 0x0A, 0x09);
-    report.arguments[0] = 0x19; // Effect ID
-    report.arguments[1] = 0x02; // Type one color
-    report.arguments[2] = 0x01; // Speed
-
-    report.arguments[3] = 0x00; // Red 1
-    report.arguments[4] = 0xFF; // Green 1
-    report.arguments[5] = 0x00; // Blue 1
-
-    report.arguments[6] = 0x00; // Red 2
-    report.arguments[7] = 0x00; // Green 2
-    report.arguments[8] = 0x00; // Blue 2
-
-    report.crc = razer_calculate_crc(&report);
-
-    retval = razer_set_report(usb_dev, &report);
-    if(retval != 0) {
-        razer_print_err_report(&report, "hid-razer", "starlight_mode: request failed");
-        return retval;
-    }
-
-    return 0;
-}
-
 // Set the wave effect on the keyboard
 int razer_set_wave_mode(struct usb_device *usb_dev, unsigned char direction)
 {
@@ -431,7 +402,8 @@ int razer_set_spectrum_mode(struct usb_device *usb_dev)
 }
 
 // Set reactive effect on the keyboard
-int razer_set_reactive_mode(struct usb_device *usb_dev, struct razer_rgb *color, unsigned char speed)
+int razer_set_reactive_mode(struct usb_device *usb_dev,
+    unsigned char speed, struct razer_rgb *color)
 {
     int retval = 0;
     struct razer_report report = new_razer_report(0x03, 0x0A, 0x05);
@@ -441,9 +413,9 @@ int razer_set_reactive_mode(struct usb_device *usb_dev, struct razer_rgb *color,
         return -EINVAL;
     }
 
-    report.arguments[0] = 0x02; // Effect ID
-    report.arguments[1] = speed; // Time
-    report.arguments[2] = color->r; /*rgb color definition*/
+    report.arguments[0] = 0x02;     // Effect ID
+    report.arguments[1] = speed;    // Time
+    report.arguments[2] = color->r;
     report.arguments[3] = color->g;
     report.arguments[4] = color->b;
     report.crc = razer_calculate_crc(&report);
@@ -457,28 +429,95 @@ int razer_set_reactive_mode(struct usb_device *usb_dev, struct razer_rgb *color,
     return 0;
 }
 
-
-// Set breath effect on the keyboard
-int razer_set_breath_mode(struct usb_device *usb_dev, unsigned char breathing_type, struct razer_rgb *color1, struct razer_rgb *color2)
+// Set the starlight effect on the keyboard.
+// Possible speed values: 1-3.
+// 1. Random color mode: set both colors to NULL
+// 2. One color mode: Set color1 and color2 to NULL
+// 3. Two color mode: Set both colors
+int razer_set_starlight_mode(struct usb_device *usb_dev, unsigned char speed,
+        struct razer_rgb *color1, struct razer_rgb *color2)
 {
     int retval;
-    struct razer_report report = new_razer_report(0x03, 0x0A, 0x08);
-    report.arguments[0] = 0x03; // Effect ID
+    struct razer_report report = new_razer_report(0x03, 0x0A, 0x00); // Data size initial to 0
+    report.arguments[0] = 0x19; // Effect ID
+    report.arguments[2] = 0x01; // Speed
 
-    report.arguments[1] = breathing_type;
+    if (speed <= 0 || speed >= 4) {
+        printk(KERN_WARNING "hid-razer: starlight_mode: speed must be within 1-3: got: %d\n", speed);
+        return -EINVAL;
+    }
 
-    if(breathing_type == 1 || breathing_type == 2) {
-        // Colour 1
+    if (color1 == NULL && color2 == NULL) {
+        report.arguments[1] = 0x03;         // Starlight effect type: random colors
+        report.data_size    = 0x03;
+    }
+    else if (color1 != NULL && color2 == NULL) {
+        report.arguments[1] = 0x01;         // Starlight effect type: one color
+        report.arguments[3] = color1->r;
+        report.arguments[4] = color1->g;
+        report.arguments[5] = color1->b;
+        report.data_size    = 0x06;
+    }
+    else if (color1 != NULL && color2 != NULL) {
+        report.arguments[1] = 0x02;         // Starlight effect type: two colors
+        report.arguments[3] = color1->r;
+        report.arguments[4] = color1->g;
+        report.arguments[5] = color1->b;
+        report.arguments[6] = color2->r;
+        report.arguments[7] = color2->g;
+        report.arguments[8] = color2->b;
+        report.data_size    = 0x09;
+    } else {
+        printk(KERN_WARNING "hid-razer: starlight_mode: invalid colors set\n");
+        return -EINVAL;
+    }
+
+    report.crc = razer_calculate_crc(&report);
+
+    retval = razer_set_report(usb_dev, &report);
+    if(retval != 0) {
+        razer_print_err_report(&report, "hid-razer", "starlight_mode: request failed");
+        return retval;
+    }
+
+    return 0;
+}
+
+
+// Set breath effect on the keyboard.
+// 1. Random color mode: set both colors to NULL
+// 2. One color mode: Set color1 and color2 to NULL
+// 3. Two color mode: Set both colors
+int razer_set_breath_mode(struct usb_device *usb_dev,
+    struct razer_rgb *color1, struct razer_rgb *color2)
+{
+    int retval;
+    struct razer_report report = new_razer_report(0x03, 0x0A, 0x00); // Data size initial to 0
+    report.arguments[0] = 0x03;             // Effect ID
+
+    if (color1 == NULL && color2 == NULL) {
+        report.arguments[1] = 0x03;         // Breath effect type: random colors
+        report.data_size    = 0x02;
+    }
+    else if (color1 != NULL && color2 == NULL) {
+        report.arguments[1] = 0x01;         // Breath effect type: one color
         report.arguments[2] = color1->r;
         report.arguments[3] = color1->g;
         report.arguments[4] = color1->b;
+        report.data_size    = 0x05;
     }
-
-    if(breathing_type == 2) {
-        // Colour 2
+    else if (color1 != NULL && color2 != NULL) {
+        report.arguments[1] = 0x02;         // Breath effect type: two colors
+        report.arguments[2] = color1->r;
+        report.arguments[3] = color1->g;
+        report.arguments[4] = color1->b;
         report.arguments[5] = color2->r;
         report.arguments[6] = color2->g;
         report.arguments[7] = color2->b;
+        report.data_size    = 0x08;
+    } else {
+        printk(KERN_WARNING "hid-razer: breath_mode: invalid colors set\n");
+        return -EINVAL;
     }
 
     report.crc = razer_calculate_crc(&report);
@@ -631,9 +670,9 @@ static ssize_t razer_attr_write_set_logo(struct device *dev,
 
 /*
  * Write device file "set_fn_toggle"
- * Sets the logo lighting state to the ASCII number written to this file.
- * If 0 should mean that the F-keys work as normal F-keys
- * If 1 should mean that the F-keys act as if the FN key is held
+ * Sets the FN mode to the ASCII number written to this file.
+ * If 0 the F-keys work as normal F-keys
+ * If 1 the F-keys act as if the FN key is held
  */
 static ssize_t razer_attr_write_set_fn_toggle(struct device *dev,
     struct device_attribute *attr, const char *buf, size_t count)
@@ -655,7 +694,7 @@ static ssize_t razer_attr_write_set_fn_toggle(struct device *dev,
 
 /*
  * Write device file "set_key_colors"
- * Writes the color rows on the keyboard. Takes in all the colours for the keyboard
+ * Writes the color rows on the keyboard. Takes in all the colors for the keyboard
  */
 static ssize_t razer_attr_write_set_key_colors(struct device *dev,
     struct device_attribute *attr, const char *buf, size_t count)
@@ -697,9 +736,11 @@ static ssize_t razer_attr_read_get_info(struct device *dev,
     int columns                 = razer_get_columns(usb_dev);
     int colors                  = rows * columns;
 
+    // Check if not supported by this device.
     if(rows < 0 || columns < 0) {
-        printk(KERN_WARNING "hid-razer: get_info: unsupported device\n");
-        return -EINVAL;
+        rows = -1;
+        columns = -1;
+        colors = -1;
     }
 
     return sprintf(buf, "rows=%d\ncolumns=%d\ncolors=%d\n",
@@ -776,30 +817,9 @@ static ssize_t razer_attr_write_mode_custom(struct device *dev,
 
 
 /*
- * Write device file "mode_startlight"
- * Starlight effect mode is activated whenever the file is written to.
- */
-static ssize_t razer_attr_write_mode_starlight(struct device *dev,
-    struct device_attribute *attr, const char *buf, size_t count)
-{
-    struct usb_interface *intf = to_usb_interface(dev->parent);
-    struct usb_device *usb_dev = interface_to_usbdev(intf);
-    int retval;
-
-    retval = razer_set_starlight_mode(usb_dev);
-    if (retval != 0) {
-        return retval;
-    }
-
-    return count;
-}
-
-
-
-/*
  * Write device file "mode_wave"
- * When 1 is written (as a character, 0x31) the wave effect is displayed moving left across the keyboard.
- * if 2 is written (0x32) then the wave effect goes right.
+ * If the ASCII number 1 is written then the wave effect is displayed moving left across the keyboard.
+ * If the ASCII number 2 is written then the wave effect goes right.
  */
 static ssize_t razer_attr_write_mode_wave(struct device *dev,
     struct device_attribute *attr, const char *buf, size_t count)
@@ -843,7 +863,7 @@ static ssize_t razer_attr_write_mode_spectrum(struct device *dev,
 /*
  * Write device file "mode_reactive"
  * Sets reactive mode when this file is written to. A speed byte and 3 RGB bytes should be written.
- * The speed must be within 01-03
+ * The speed must be within 1-3
  * 1 Short, 2 Medium, 3 Long
  */
 static ssize_t razer_attr_write_mode_reactive(struct device *dev,
@@ -858,7 +878,52 @@ static ssize_t razer_attr_write_mode_reactive(struct device *dev,
         return -EINVAL;
     }
 
-    retval = razer_set_reactive_mode(usb_dev, (struct razer_rgb*)&buf[1], (unsigned char)buf[0]);
+    retval = razer_set_reactive_mode(usb_dev, (unsigned char)buf[0], (struct razer_rgb*)&buf[1]);
+    if (retval != 0) {
+        return retval;
+    }
+
+    return count;
+}
+
+
+
+/*
+ * Write device file "mode_starlight"
+ * Requires at least one byte representing the effect speed.
+ * The speed must be within 1-3
+ * 1 Short, 2 Medium, 3 Long
+ *
+ * Starlight mode has 3 modes of operation:
+ *   Mode 1: single color. 3 RGB bytes.
+ *   Mode 2: two colors. 6 RGB bytes.
+ *   Mode 3: random colors.
+ */
+static ssize_t razer_attr_write_mode_starlight(struct device *dev,
+    struct device_attribute *attr, const char *buf, size_t count)
+{
+    struct usb_interface *intf = to_usb_interface(dev->parent);
+    struct usb_device *usb_dev = interface_to_usbdev(intf);
+    struct razer_rgb* color1 = NULL;
+    struct razer_rgb* color2 = NULL;
+    int retval;
+
+    if (count < 1) {
+        printk(KERN_WARNING "hid-razer: mode starlight requires one speed byte\n");
+        return -EINVAL;
+    }
+
+    if(count == 4) {
+        // Single color mode
+        color1 = (struct razer_rgb*)&buf[1];
+    }
+    else if(count == 7) {
+        // Dual color mode
+        color1 = (struct razer_rgb*)&buf[1];
+        color2 = (struct razer_rgb*)&buf[4];
+    }
+
+    retval = razer_set_starlight_mode(usb_dev, (unsigned char)buf[0], color1, color2);
     if (retval != 0) {
         return retval;
     }
@@ -871,39 +936,32 @@ static ssize_t razer_attr_write_mode_reactive(struct device *dev,
 /*
  * Write device file "mode_breath"
  * Breathing mode has 3 modes of operation.
- * Mode 1 fading in and out using a single colour. 3 RGB bytes.
- * Mode 2 is fading in and out between two colours. 6 RGB bytes.
- * Mode 3 is fading in and out between random colours.
+ * Mode 1 fading in and out using a single color. 3 RGB bytes.
+ * Mode 2 is fading in and out between two colors. 6 RGB bytes.
+ * Mode 3 is fading in and out between random colors. Anything else passed.
  */
 static ssize_t razer_attr_write_mode_breath(struct device *dev,
     struct device_attribute *attr, const char *buf, size_t count)
 {
     struct usb_interface *intf = to_usb_interface(dev->parent);
     struct usb_device *usb_dev = interface_to_usbdev(intf);
+    struct razer_rgb* color1 = NULL;
+    struct razer_rgb* color2 = NULL;
     int retval;
 
-    const char *alt_buf[6] = { 0 };
-
     if(count == 3) {
-        // Single colour mode
-        retval = razer_set_breath_mode(usb_dev, 0x01, (struct razer_rgb*)&buf[0], (struct razer_rgb*)&alt_buf[3]);
-        if (retval != 0) {
-            return retval;
-        }
+        // Single color mode
+        color1 = (struct razer_rgb*)&buf[0];
     }
     else if(count == 6) {
-        // Dual colour mode
-        retval = razer_set_breath_mode(usb_dev, 0x02, (struct razer_rgb*)&buf[0], (struct razer_rgb*)&buf[3]);
-        if (retval != 0) {
-            return retval;
-        }
+        // Dual color mode
+        color1 = (struct razer_rgb*)&buf[0];
+        color2 = (struct razer_rgb*)&buf[3];
     }
-    else {
-        // "Random" colour mode
-        retval = razer_set_breath_mode(usb_dev, 0x03, (struct razer_rgb*)&alt_buf[0], (struct razer_rgb*)&alt_buf[3]);
-        if (retval != 0) {
-            return retval;
-        }
+
+    retval = razer_set_breath_mode(usb_dev, color1, color2);
+    if (retval != 0) {
+        return retval;
     }
 
     return count;

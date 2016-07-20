@@ -1,5 +1,5 @@
 # The project version
-VERSION=0.0.1
+VERSION=1.0.0
 
 # DESTDIR is used to install into a different root directory
 DESTDIR?=/

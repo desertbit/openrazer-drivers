@@ -35,6 +35,7 @@ MODULE_AUTHOR("Roland Singer <roland.singer@desertbit.com>");
 MODULE_AUTHOR("Tim Theede <pez2001@voyagerproject.de>");
 MODULE_DESCRIPTION("USB Razer common driver");
 MODULE_LICENSE("GPL v2");
+MODULE_VERSION("1.0.0");
 
 
 
