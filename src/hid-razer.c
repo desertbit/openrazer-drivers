@@ -66,13 +66,12 @@ int razer_get_firmware_version(struct usb_device *usb_dev, unsigned char* fw_str
 {
     int retval;
     struct razer_report response_report;
-    struct razer_report request_report = new_razer_report(0x00, 0x81, 0x02);
+    struct razer_report request_report = new_razer_report(0x00, 0x81, 0x00);
     request_report.crc = razer_calculate_crc(&request_report);
 
     retval = razer_get_report(usb_dev, &request_report, &response_report);
-    if(retval != 0)
-    {
-        razer_print_err_report(&response_report, "hid-razer", "invalid report length");
+    if(retval != 0) {
+        razer_print_err_report(&response_report, "hid-razer", "get_firmware_version: invalid report length");
         return retval;
     }
 
@@ -81,14 +80,13 @@ int razer_get_firmware_version(struct usb_device *usb_dev, unsigned char* fw_str
         response_report.command_id.id == 0x81)
     {
         sprintf(fw_string, "v%d.%d", response_report.arguments[0], response_report.arguments[1]);
-        retval = response_report.arguments[2];
     }
     else {
-        razer_print_err_report(&response_report, "hid-razer", "invalid report type");
+        razer_print_err_report(&response_report, "hid-razer", "get_firmware_version: invalid report type");
         return -EINVAL;
     }
 
-    return retval;
+    return 0;
 }
 
 // Get brightness of the keyboard.
@@ -97,19 +95,13 @@ int razer_get_brightness(struct usb_device *usb_dev)
     int retval;
     struct razer_report response_report;
 
-    // Class LED Lighting, Command Set state, 3 Bytes of parameters
-    struct razer_report request_report = new_razer_report(0x03, 0x83, 0x03);
+    struct razer_report request_report = new_razer_report(0x0E, 0x84, 0x01);
     request_report.arguments[0] = 0x01;
-    request_report.data_size = 0x02;
-    request_report.command_class = 0x0E;
-    request_report.command_id.id = 0x84;
-
-    // Calculate the checksum
     request_report.crc = razer_calculate_crc(&request_report);
 
     retval = razer_get_report(usb_dev, &request_report, &response_report);
     if(retval != 0) {
-        razer_print_err_report(&response_report, "hid-razer", "invalid report length");
+        razer_print_err_report(&response_report, "hid-razer", "get_brightness: invalid report length");
         return retval;
     }
 
@@ -121,7 +113,7 @@ int razer_get_brightness(struct usb_device *usb_dev)
         retval = response_report.arguments[1];
     }
     else {
-        razer_print_err_report(&response_report, "hid-razer", "invalid report type");
+        razer_print_err_report(&response_report, "hid-razer", "get_brightness: invalid report type");
         return -EINVAL;
     }
 
@@ -133,14 +125,9 @@ int razer_set_brightness(struct usb_device *usb_dev, unsigned char brightness)
 {
     int retval;
 
-    struct razer_report report = new_razer_report(0x03, 0x03, 0x03);
+    struct razer_report report = new_razer_report(0x0E, 0x04, 0x02);
     report.arguments[0] = 0x01;
-    report.data_size = 0x02;
-    report.command_class = 0x0E;
-    report.command_id.id = 0x04;
     report.arguments[1] = brightness;
-
-    // Calculate the checksum
     report.crc = razer_calculate_crc(&report);
 
     retval = razer_set_report(usb_dev, &report);
@@ -163,9 +150,9 @@ int razer_set_logo(struct usb_device *usb_dev, unsigned char state)
         return -EINVAL;
     }
 
-    report.arguments[0] = 0x01; // LED Class
-    report.arguments[1] = 0x04; // LED ID, Logo
-    report.arguments[2] = state; // State
+    report.arguments[0] = 0x01;     // LED Class
+    report.arguments[1] = 0x04;     // LED ID, Logo
+    report.arguments[2] = state;    // State
     report.crc = razer_calculate_crc(&report);
 
     retval = razer_set_report(usb_dev, &report);
@@ -328,7 +315,7 @@ int razer_set_static_mode(struct usb_device *usb_dev, struct razer_rgb *color)
     int retval;
     struct razer_report report = new_razer_report(0x03, 0x0A, 0x04);
     report.arguments[0] = 0x06;     // Effect ID
-    report.arguments[1] = color->r; // rgb color definition
+    report.arguments[1] = color->r;
     report.arguments[2] = color->g;
     report.arguments[3] = color->b;
     report.crc = razer_calculate_crc(&report);
@@ -414,7 +401,7 @@ int razer_set_reactive_mode(struct usb_device *usb_dev,
     }
 
     report.arguments[0] = 0x02;     // Effect ID
-    report.arguments[1] = speed;    // Time
+    report.arguments[1] = speed;    // Speed
     report.arguments[2] = color->r;
     report.arguments[3] = color->g;
     report.arguments[4] = color->b;
