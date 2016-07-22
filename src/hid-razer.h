@@ -18,8 +18,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef HID_RAZER_H
-#define HID_RAZER_H
+#ifndef __HID_RAZER_H
+#define __HID_RAZER_H
 
 
 //#################//
@@ -29,14 +29,10 @@
 #define RAZER_KBD_WAIT_MIN_US 600
 #define RAZER_KBD_WAIT_MAX_US 800
 
-// Device IDs
-#define USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016  0x0205
-#define USB_DEVICE_ID_RAZER_BLADE_14_2016       0x020F
-
 // Keyboard rows and columns.
 #define RAZER_STEALTH_2016_ROWS     0x06
 #define RAZER_STEALTH_2016_COLUMNS  0x10
 #define RAZER_BLADE_14_2016_ROWS    0x06
 #define RAZER_BLADE_14_2016_COLUMNS 0x10
 
-#endif // HID_RAZER_H
+#endif // __HID_RAZER_H

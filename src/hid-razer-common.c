@@ -32,7 +32,6 @@
 //###########################//
 
 MODULE_AUTHOR("Roland Singer <roland.singer@desertbit.com>");
-MODULE_AUTHOR("Tim Theede <pez2001@voyagerproject.de>");
 MODULE_DESCRIPTION("USB Razer common driver");
 MODULE_LICENSE("GPL v2");
 MODULE_VERSION("1.0.0");
@@ -51,13 +50,13 @@ struct razer_report new_razer_report(unsigned char command_class, unsigned char 
     struct razer_report new_report;
     memset(&new_report, 0, sizeof(struct razer_report));
 
-    new_report.status = 0x00;
-    new_report.transaction_id.id = 0xFF;
-    new_report.remaining_packets = 0x00;
-    new_report.protocol_type = 0x00;
-    new_report.command_class = command_class;
-    new_report.command_id.id = command_id;
-    new_report.data_size = data_size;
+    new_report.status               = RAZER_STATUS_NEW_COMMAND;
+    new_report.transaction_id.id    = 0xFF;
+    new_report.remaining_packets    = 0x00;
+    new_report.protocol_type        = 0x00;
+    new_report.command_class        = command_class;
+    new_report.command_id.id        = command_id;
+    new_report.data_size            = data_size;
 
     return new_report;
 }
@@ -66,9 +65,10 @@ EXPORT_SYMBOL_GPL(new_razer_report);
 
 
 
-/**
+/*
  * Send USB control report to the keyboard
  * Usually index = 0x02
+ * Returns 0 on success.
  */
 int razer_send_control_msg(struct usb_device *usb_dev, void const *data,
 	uint report_index, ulong wait_min, ulong wait_max)
@@ -103,16 +103,17 @@ int razer_send_control_msg(struct usb_device *usb_dev, void const *data,
 
     if (len != size) {
         printk(KERN_WARNING "razer device: device data transfer failed");
+        return -EIO;
     }
 
-    return ((len < 0) ? len : ((len != size) ? -EIO : 0));
+    return 0;
 }
 
 EXPORT_SYMBOL_GPL(razer_send_control_msg);
 
 
 
-/**
+/*
  * Get a response from the razer device
  *
  * Makes a request like normal, this must change a variable in the device as then we
@@ -121,7 +122,7 @@ EXPORT_SYMBOL_GPL(razer_send_control_msg);
  * Request report is the report sent to the device specifing what response we want
  * Response report will get populated with a response
  *
- * Returns 0 when successful, 1 if the report length is invalid.
+ * Returns 0 on success.
  */
 int razer_get_usb_response(struct usb_device *usb_dev, uint report_index,
 	struct razer_report* request_report,
@@ -142,7 +143,7 @@ int razer_get_usb_response(struct usb_device *usb_dev, uint report_index,
     retval = razer_send_control_msg(usb_dev, request_report, report_index, wait_min, wait_max);
 	if (retval != 0) {
 		printk(KERN_WARNING "razer device: invalid USB repsonse: request failed: %d\n", retval);
-		return 1;
+		return retval;
 	}
 
     // Now ask for reponse
@@ -158,9 +159,9 @@ int razer_get_usb_response(struct usb_device *usb_dev, uint report_index,
     usleep_range(wait_min, wait_max);
 
     // Error if report is wrong length
-    if (len != RAZER_USB_REPORT_LEN) {
-        printk(KERN_WARNING "razer device: invalid USB repsonse: USB Report length: %d\n", len);
-        return 1;
+    if (len != size) {
+        printk(KERN_WARNING "razer device: invalid USB repsonse: USB report length: %d\n", len);
+        return -EIO;
     }
 
     return 0;
@@ -170,7 +171,7 @@ EXPORT_SYMBOL_GPL(razer_get_usb_response);
 
 
 
-/**
+/*
  * Calculate the checksum for the usb message
  *
  * Checksum byte is stored in the 2nd last byte in the messages payload.
@@ -179,14 +180,13 @@ EXPORT_SYMBOL_GPL(razer_get_usb_response);
  */
 unsigned char razer_calculate_crc(struct razer_report *report)
 {
-    /*second to last byte of report is a simple checksum*/
-    /*just xor all bytes up with overflow and you are done*/
+    // Second to last byte of report is a simple checksum.
+    // Just xor all bytes up with overflow and you are done.
     unsigned char crc = 0;
     unsigned char *_report = (unsigned char*)report;
 
     unsigned int i;
-    for(i = 2; i < 88; i++)
-    {
+    for(i = 2; i < 88; i++) {
         crc ^= _report[i];
     }
 
@@ -197,12 +197,12 @@ EXPORT_SYMBOL_GPL(razer_calculate_crc);
 
 
 
-/**
- * Print report to syslog
+/*
+ * Detailed error print
  */
 void razer_print_err_report(struct razer_report* report, char* driver_name, char* message)
 {
-    printk(KERN_WARNING "%s: %s. Start Marker: %02x id: %02x Num Params: %02x Reserved: %02x Command: %02x Params: %02x%02x%02x%02x%02x%02x .\n",
+    printk(KERN_WARNING "%s: %s. Status: %02x Transaction ID: %02x Data Size: %02x Command Class: %02x Command ID: %02x Params: %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n",
         driver_name,
         message,
         report->status,
@@ -210,7 +210,10 @@ void razer_print_err_report(struct razer_report* report, char* driver_name, char
         report->data_size,
         report->command_class,
         report->command_id.id,
-        report->arguments[0], report->arguments[1], report->arguments[2], report->arguments[3], report->arguments[4], report->arguments[5]);
+        report->arguments[0], report->arguments[1], report->arguments[2],
+        report->arguments[3], report->arguments[4], report->arguments[5],
+        report->arguments[6], report->arguments[7], report->arguments[8],
+        report->arguments[9]);
 }
 
 EXPORT_SYMBOL_GPL(razer_print_err_report);

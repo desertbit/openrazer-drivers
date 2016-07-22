@@ -18,8 +18,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef HID_RAZER_COMMON_H
-#define HID_RAZER_COMMON_H
+#ifndef __HID_RAZER_COMMON_H
+#define __HID_RAZER_COMMON_H
 
 
 //#################//
@@ -27,7 +27,10 @@
 //#################//
 
 // The Razer vendor ID
-#define USB_VENDOR_ID_RAZER 0x1532
+// TODO: move to hid-ids.h on linux mainline inclusion.
+#define USB_VENDOR_ID_RAZER                     0x1532
+#define USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016  0x0205
+#define USB_DEVICE_ID_RAZER_BLADE_14_2016       0x020F
 
 // Each USB report has 90 bytes
 #define RAZER_USB_REPORT_LEN 0x5A
@@ -38,11 +41,20 @@
 //### Types ###//
 //#############//
 
-struct razer_rgb {
-    unsigned char r,g,b;
+enum razer_status {
+    RAZER_STATUS_NEW_COMMAND    = 0x00,
+    RAZER_STATUS_BUSY           = 0x01,
+    RAZER_STATUS_SUCCESS        = 0x02,
+    RAZER_STATUS_FAILURE        = 0x03,
+    RAZER_STATUS_TIMEOUT        = 0x04,
+    RAZER_STATUS_NOT_SUPPORTED  = 0x05
 };
 
-union transaction_id_union {
+struct razer_rgb {
+    unsigned char r, g, b;
+};
+
+union razer_transaction_id_union {
     unsigned char id;
     struct transaction_parts {
         unsigned char device : 3;
@@ -50,7 +62,7 @@ union transaction_id_union {
     } parts;
 };
 
-union command_id_union {
+union razer_command_id_union {
     unsigned char id;
     struct command_id_parts {
         unsigned char direction : 1;
@@ -77,12 +89,12 @@ union command_id_union {
 
 struct razer_report {
     unsigned char           status;
-    union                   transaction_id_union transaction_id;
+    union                   razer_transaction_id_union transaction_id;
     unsigned short          remaining_packets;  // Big Endian
     unsigned char           protocol_type;      // 0x0
     unsigned char           data_size;
     unsigned char           command_class;
-    union command_id_union  command_id;
+    union razer_command_id_union  command_id;
     unsigned char           arguments[80];
     unsigned char           crc;        // xor'ed bytes of report
     unsigned char           reserved;   // 0x0
@@ -111,4 +123,4 @@ void razer_print_err_report(struct razer_report* report,
     char* driver_name, char* message);
 
 
-#endif // HID_RAZER_COMMON_H
+#endif // __HID_RAZER_COMMON_H
