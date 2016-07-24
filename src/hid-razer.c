@@ -984,6 +984,9 @@ static int razer_kbd_probe(struct hid_device *hdev,
     retval = device_create_file(dev, &dev_attr_device_type);
     if (retval)
         goto exit_free;
+    retval = device_create_file(dev, &dev_attr_get_info);
+    if (retval)
+        goto exit_free;
     retval = device_create_file(dev, &dev_attr_brightness);
     if (retval)
         goto exit_free;
@@ -1000,9 +1003,6 @@ static int razer_kbd_probe(struct hid_device *hdev,
         if (retval)
             goto exit_free;
         retval = device_create_file(dev, &dev_attr_set_key_colors);
-        if (retval)
-            goto exit_free;
-        retval = device_create_file(dev, &dev_attr_get_info);
         if (retval)
             goto exit_free;
 
@@ -1067,6 +1067,7 @@ static void razer_kbd_disconnect(struct hid_device *hdev)
     device_remove_file(dev, &dev_attr_get_firmware_version);
     device_remove_file(dev, &dev_attr_get_serial);
     device_remove_file(dev, &dev_attr_device_type);
+    device_remove_file(dev, &dev_attr_get_info);
     device_remove_file(dev, &dev_attr_brightness);
 
 
@@ -1077,7 +1078,6 @@ static void razer_kbd_disconnect(struct hid_device *hdev)
         device_remove_file(dev, &dev_attr_set_logo);
         device_remove_file(dev, &dev_attr_set_fn_toggle);
         device_remove_file(dev, &dev_attr_set_key_colors);
-        device_remove_file(dev, &dev_attr_get_info);
 
         // Modes
         device_remove_file(dev, &dev_attr_mode_none);

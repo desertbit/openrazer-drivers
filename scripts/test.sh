@@ -42,6 +42,9 @@ cat "$DEVICE_PATH/get_serial"
 echo -n -e "${COLOR}device_type:${NC} "
 cat "$DEVICE_PATH/device_type"
 
+echo -e "${COLOR}get_info${NC}"
+cat "$DEVICE_PATH/get_info"
+
 echo -n -e "${COLOR}brightness:${NC} "
 cat "$DEVICE_PATH/brightness"
 
@@ -68,3 +71,13 @@ echo -n -e "${COLOR}brightness:${NC} "
 cat "$DEVICE_PATH/brightness"
 
 sleep 2
+
+
+# set_logo
+if [[ -d "$DEVICE_PATH/set_logo" ]]; then
+    echo -e "${COLOR}set logo${NC} off"
+    echo -n "0" > "$DEVICE_PATH/set_logo"
+    sleep 2
+    echo -e "${COLOR}set logo${NC} on"
+    echo -n "1" > "$DEVICE_PATH/set_logo"
+fi
