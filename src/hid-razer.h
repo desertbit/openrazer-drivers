@@ -22,12 +22,13 @@
 #define __HID_RAZER_H
 
 
+
 //#################//
 //### Constants ###//
 //#################//
 
-#define RAZER_KBD_WAIT_MIN_US 600
-#define RAZER_KBD_WAIT_MAX_US 800
+// Report indexes.
+#define RAZER_DEFAULT_REPORT_INDEX  0x02
 
 // Keyboard rows and columns.
 #define RAZER_STEALTH_2016_ROWS     0x06

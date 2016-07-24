@@ -45,17 +45,19 @@ MODULE_VERSION("1.0.0");
 /*
  * Get an initialised razer report
  */
-struct razer_report new_razer_report(unsigned char command_class, unsigned char command_id, unsigned char data_size)
+struct razer_report new_razer_report(unsigned char command_class,
+    unsigned char command_id, unsigned char data_size)
 {
     struct razer_report new_report;
     memset(&new_report, 0, sizeof(struct razer_report));
 
     new_report.status               = RAZER_STATUS_NEW_COMMAND;
-    new_report.transaction_id.id    = 0xFF;
+    new_report.transaction_id       = 0xFF;
     new_report.remaining_packets    = 0x00;
     new_report.protocol_type        = 0x00;
+    new_report.reserved             = 0x00;
     new_report.command_class        = command_class;
-    new_report.command_id.id        = command_id;
+    new_report.command_id           = command_id;
     new_report.data_size            = data_size;
 
     return new_report;
@@ -66,108 +68,143 @@ EXPORT_SYMBOL_GPL(new_razer_report);
 
 
 /*
- * Send USB control report to the keyboard
- * Usually index = 0x02
+ * Send an USB control report to the device.
  * Returns 0 on success.
  */
-int razer_send_control_msg(struct usb_device *usb_dev, void const *data,
-	uint report_index, ulong wait_min, ulong wait_max)
+int razer_send(struct razer_device *razer_dev, struct razer_report* report)
 {
-	uint request = HID_REQ_SET_REPORT; // 0x09
-	uint request_type = USB_TYPE_CLASS | USB_RECIP_INTERFACE | USB_DIR_OUT; // 0x21
-    uint value = 0x300;
-    uint size = RAZER_USB_REPORT_LEN;
+    const uint size = sizeof(struct razer_report);
     char *buf;
     int len;
 
-    buf = kmemdup(data, size, GFP_KERNEL);
+    buf = kmemdup(report, size, GFP_KERNEL);
     if (buf == NULL) {
         return -ENOMEM;
     }
 
-    // Send usb control message
-    len = usb_control_msg(usb_dev, usb_sndctrlpipe(usb_dev, 0),
-            request,      // Request
-            request_type, // RequestType
-            value,        // Value
-            report_index, // Index
-            buf,          // Data
-            size,         // Length
+    len = usb_control_msg(razer_dev->usb_dev,
+            usb_sndctrlpipe(razer_dev->usb_dev, 0),
+            HID_REQ_SET_REPORT,                                 // Request
+            USB_TYPE_CLASS | USB_RECIP_INTERFACE | USB_DIR_OUT, // RequestType
+            0x300,                                              // Value
+            razer_dev->report_index,                            // Index
+            buf,                                                // Data
+            size,                                               // Length
             USB_CTRL_SET_TIMEOUT);
 
-    // Wait
-    usleep_range(wait_min, wait_max);
-
-    // Free the memory again.
     kfree(buf);
 
-    if (len != size) {
-        printk(KERN_WARNING "razer device: device data transfer failed");
-        return -EIO;
-    }
-
-    return 0;
+    return ((len < 0) ? len : ((len != size) ? -EIO : 0));
 }
 
-EXPORT_SYMBOL_GPL(razer_send_control_msg);
+EXPORT_SYMBOL_GPL(razer_send);
 
 
 
 /*
- * Get a response from the razer device
- *
- * Makes a request like normal, this must change a variable in the device as then we
- * tell it give us data and it gives us a report.
- *
- * Request report is the report sent to the device specifing what response we want
- * Response report will get populated with a response
- *
+ * Get a response from the razer device.
  * Returns 0 on success.
  */
-int razer_get_usb_response(struct usb_device *usb_dev, uint report_index,
-	struct razer_report* request_report,
-	uint response_index, struct razer_report* response_report,
-	ulong wait_min, ulong wait_max)
+int razer_receive(struct razer_device *razer_dev, struct razer_report* report)
 {
-    uint request = HID_REQ_GET_REPORT; // 0x01
-    uint request_type = USB_TYPE_CLASS | USB_RECIP_INTERFACE | USB_DIR_IN; // 0xA1
-    uint value = 0x300;
-
-    uint size = RAZER_USB_REPORT_LEN;
+    const uint size = sizeof(struct razer_report);
     int len;
-    int retval;
 
-    memset(response_report, 0, sizeof(struct razer_report));
+    memset(report, 0, size);
 
-    // Send the request to the device.
-    retval = razer_send_control_msg(usb_dev, request_report, report_index, wait_min, wait_max);
-	if (retval != 0) {
-		printk(KERN_WARNING "razer device: invalid USB repsonse: request failed: %d\n", retval);
-		return retval;
-	}
+    len = usb_control_msg(razer_dev->usb_dev,
+            usb_rcvctrlpipe(razer_dev->usb_dev, 0),
+            HID_REQ_GET_REPORT,                                   // Request
+            USB_TYPE_CLASS | USB_RECIP_INTERFACE | USB_DIR_IN,    // RequestType
+            0x300,                                                // Value
+            razer_dev->report_index,                              // Index
+            report,                                               // Data
+            size,
+            USB_CTRL_SET_TIMEOUT);
 
-    // Now ask for reponse
-    len = usb_control_msg(usb_dev, usb_rcvctrlpipe(usb_dev, 0),
-          request,         // Request
-          request_type,    // RequestType
-          value,           // Value
-          response_index,  // Index
-          response_report, // Data
-          size,
-          USB_CTRL_SET_TIMEOUT);
-
-    usleep_range(wait_min, wait_max);
-
-    // Error if report is wrong length
-    if (len != size) {
-        printk(KERN_WARNING "razer device: invalid USB repsonse: USB report length: %d\n", len);
-        return -EIO;
-    }
-
-    return 0;
+    return ((len < 0) ? len : ((len != size) ? -EIO : 0));
 }
 
-EXPORT_SYMBOL_GPL(razer_get_usb_response);
+EXPORT_SYMBOL_GPL(razer_receive);
+
+
+
+/*
+ * Send a report and wait for a response.
+ * Returns 0 on success.
+ */
+int razer_send_with_response(struct razer_device *razer_dev,
+    struct razer_report* request_report, struct razer_report* response_report)
+{
+    int retval, r;
+
+    retval = razer_send(razer_dev, request_report);
+    if (retval != 0) {
+        return retval;
+    }
+
+    for (r=0; r < 1000; r++) {
+        retval = razer_receive(razer_dev, response_report);
+        if (retval != 0) {
+            return retval;
+        }
+
+        if (response_report->command_class != request_report->command_class ||
+                response_report->command_id != request_report->command_id)
+        {
+            dev_err(&razer_dev->usb_dev->dev,
+                    "razer_send_with_response: "
+                    "response commands do not match: "
+                    "Request Class: %d "
+                    "Request ID: %d "
+                    "Response Class: %d "
+                    "Response ID: %d\n",
+                    request_report->command_class,
+                    request_report->command_id,
+                    response_report->command_class,
+                    response_report->command_id);
+            return -EINVAL;
+        }
+
+        switch (response_report->status) {
+        case RAZER_STATUS_SUCCESS:
+            return 0;
+        case RAZER_STATUS_BUSY:
+            msleep(500);
+            continue;
+        case RAZER_STATUS_FAILURE:
+        case RAZER_STATUS_TIMEOUT:
+        case RAZER_STATUS_NOT_SUPPORTED:
+            return -EINVAL;
+        default:
+            dev_err(&razer_dev->usb_dev->dev,
+                    "razer_send_with_response: "
+                    "unknown response status 0x%x\n",
+                    response_report->status);
+            return -EINVAL;
+        }
+    }
+
+    return -EBUSY;
+}
+
+EXPORT_SYMBOL_GPL(razer_send_with_response);
+
+
+
+/*
+ * Send a report, wait for a response and check the response status.
+ * Returns 0 on success.
+ */
+int razer_send_check_response(struct razer_device *razer_dev,
+    struct razer_report* request_report)
+{
+    struct razer_report response_report;
+
+    return razer_send_with_response(razer_dev, request_report, &response_report);
+}
+
+EXPORT_SYMBOL_GPL(razer_send_check_response);
 
 
 
@@ -206,10 +243,10 @@ void razer_print_err_report(struct razer_report* report, char* driver_name, char
         driver_name,
         message,
         report->status,
-        report->transaction_id.id,
+        report->transaction_id,
         report->data_size,
         report->command_class,
-        report->command_id.id,
+        report->command_id,
         report->arguments[0], report->arguments[1], report->arguments[2],
         report->arguments[3], report->arguments[4], report->arguments[5],
         report->arguments[6], report->arguments[7], report->arguments[8],
