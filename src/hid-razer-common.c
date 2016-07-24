@@ -43,9 +43,25 @@ MODULE_VERSION("1.0.0");
 //##########################//
 
 /*
+ * Initialize a razer device struct.
+ */
+int razer_init_device(struct razer_device *razer_dev,
+    struct usb_device *usb_dev)
+{
+    razer_dev->usb_dev = usb_dev;
+    mutex_init(&razer_dev->lock);
+
+    return 0;
+}
+
+EXPORT_SYMBOL_GPL(razer_init_device);
+
+
+
+/*
  * Get an initialised razer report
  */
-struct razer_report new_razer_report(unsigned char command_class,
+struct razer_report razer_new_report(unsigned char command_class,
     unsigned char command_id, unsigned char data_size)
 {
     struct razer_report new_report;
@@ -63,7 +79,7 @@ struct razer_report new_razer_report(unsigned char command_class,
     return new_report;
 }
 
-EXPORT_SYMBOL_GPL(new_razer_report);
+EXPORT_SYMBOL_GPL(razer_new_report);
 
 
 
@@ -71,7 +87,7 @@ EXPORT_SYMBOL_GPL(new_razer_report);
  * Send an USB control report to the device.
  * Returns 0 on success.
  */
-int razer_send(struct razer_device *razer_dev, struct razer_report* report)
+int _razer_send(struct razer_device *razer_dev, struct razer_report* report)
 {
     const uint size = sizeof(struct razer_report);
     char *buf;
@@ -97,6 +113,17 @@ int razer_send(struct razer_device *razer_dev, struct razer_report* report)
     return ((len < 0) ? len : ((len != size) ? -EIO : 0));
 }
 
+int razer_send(struct razer_device *razer_dev, struct razer_report* report)
+{
+    int retval;
+
+    mutex_lock(&razer_dev->lock);
+    retval = _razer_send(razer_dev, report);
+    mutex_unlock(&razer_dev->lock);
+
+    return retval;
+}
+
 EXPORT_SYMBOL_GPL(razer_send);
 
 
@@ -105,7 +132,7 @@ EXPORT_SYMBOL_GPL(razer_send);
  * Get a response from the razer device.
  * Returns 0 on success.
  */
-int razer_receive(struct razer_device *razer_dev, struct razer_report* report)
+int _razer_receive(struct razer_device *razer_dev, struct razer_report* report)
 {
     const uint size = sizeof(struct razer_report);
     int len;
@@ -125,6 +152,17 @@ int razer_receive(struct razer_device *razer_dev, struct razer_report* report)
     return ((len < 0) ? len : ((len != size) ? -EIO : 0));
 }
 
+int razer_receive(struct razer_device *razer_dev, struct razer_report* report)
+{
+    int retval;
+
+    mutex_lock(&razer_dev->lock);
+    retval = _razer_receive(razer_dev, report);
+    mutex_unlock(&razer_dev->lock);
+
+    return retval;
+}
+
 EXPORT_SYMBOL_GPL(razer_receive);
 
 
@@ -133,18 +171,18 @@ EXPORT_SYMBOL_GPL(razer_receive);
  * Send a report and wait for a response.
  * Returns 0 on success.
  */
-int razer_send_with_response(struct razer_device *razer_dev,
+int _razer_send_with_response(struct razer_device *razer_dev,
     struct razer_report* request_report, struct razer_report* response_report)
 {
     int retval, r;
 
-    retval = razer_send(razer_dev, request_report);
+    retval = _razer_send(razer_dev, request_report);
     if (retval != 0) {
         return retval;
     }
 
     for (r=0; r < 1000; r++) {
-        retval = razer_receive(razer_dev, response_report);
+        retval = _razer_receive(razer_dev, response_report);
         if (retval != 0) {
             return retval;
         }
@@ -186,6 +224,18 @@ int razer_send_with_response(struct razer_device *razer_dev,
     }
 
     return -EBUSY;
+}
+
+int razer_send_with_response(struct razer_device *razer_dev,
+    struct razer_report* request_report, struct razer_report* response_report)
+{
+    int retval;
+
+    mutex_lock(&razer_dev->lock);
+    retval = _razer_send_with_response(razer_dev, request_report, response_report);
+    mutex_unlock(&razer_dev->lock);
+
+    return retval;
 }
 
 EXPORT_SYMBOL_GPL(razer_send_with_response);

@@ -51,8 +51,9 @@ enum razer_status {
 };
 
 struct razer_device {
-    struct usb_device *usb_dev;
-    uint report_index;          // The report index to use.
+    struct usb_device   *usb_dev;
+    struct mutex        lock;
+    uint                report_index;   // The report index to use.
 };
 
 struct razer_rgb {
@@ -78,7 +79,10 @@ struct razer_report {
 //### Functions ###//
 //#################//
 
-struct razer_report new_razer_report(unsigned char command_class,
+int razer_init_device(struct razer_device *razer_dev,
+    struct usb_device *usb_dev);
+
+struct razer_report razer_new_report(unsigned char command_class,
     unsigned char command_id, unsigned char data_size);
 
 int razer_send(struct razer_device *razer_dev, struct razer_report* report);

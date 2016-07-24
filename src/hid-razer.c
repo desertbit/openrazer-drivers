@@ -50,7 +50,7 @@ int razer_get_firmware_version(struct razer_device *razer_dev, unsigned char* fw
 {
     int retval;
     struct razer_report response_report;
-    struct razer_report request_report = new_razer_report(0x00, 0x81, 0x00);
+    struct razer_report request_report = razer_new_report(0x00, 0x81, 0x00);
     request_report.crc = razer_calculate_crc(&request_report);
 
     retval = razer_send_with_response(razer_dev, &request_report, &response_report);
@@ -69,7 +69,7 @@ int razer_get_brightness(struct razer_device *razer_dev)
     int retval;
     struct razer_report response_report;
 
-    struct razer_report request_report = new_razer_report(0x0E, 0x84, 0x01);
+    struct razer_report request_report = razer_new_report(0x0E, 0x84, 0x01);
     request_report.arguments[0] = 0x01;
     request_report.crc = razer_calculate_crc(&request_report);
 
@@ -87,7 +87,7 @@ int razer_set_brightness(struct razer_device *razer_dev, unsigned char brightnes
 {
     int retval;
 
-    struct razer_report report = new_razer_report(0x0E, 0x04, 0x02);
+    struct razer_report report = razer_new_report(0x0E, 0x04, 0x02);
     report.arguments[0] = 0x01;
     report.arguments[1] = brightness;
     report.crc = razer_calculate_crc(&report);
@@ -105,7 +105,7 @@ int razer_set_brightness(struct razer_device *razer_dev, unsigned char brightnes
 int razer_set_logo(struct razer_device *razer_dev, unsigned char state)
 {
     int retval;
-    struct razer_report report = new_razer_report(0x03, 0x00, 0x03);
+    struct razer_report report = razer_new_report(0x03, 0x00, 0x03);
 
     if (state != 0 && state != 1) {
         printk(KERN_WARNING "hid-razer: set_logo: logo lighting state must be either 0 or 1: got: %d\n", state);
@@ -130,7 +130,7 @@ int razer_set_logo(struct razer_device *razer_dev, unsigned char state)
 int razer_set_fn_toggle(struct razer_device *razer_dev, unsigned char state)
 {
     int retval;
-    struct razer_report report = new_razer_report(0x02, 0x06, 0x02);
+    struct razer_report report = razer_new_report(0x02, 0x06, 0x02);
 
     if (state != 0 && state != 1) {
         printk(KERN_WARNING "hid-razer: fn_toggle: toggle FN state must be either 0 or 1: got: %d\n", state);
@@ -186,7 +186,7 @@ int razer_set_key_row(struct razer_device *razer_dev,
     int rows                        = razer_get_rows(razer_dev->usb_dev);
     int columns                     = razer_get_columns(razer_dev->usb_dev);
     size_t row_cols_required_len    = columns * 3;
-    struct razer_report report      = new_razer_report(0x03, 0x0B, 0x00); // Set the data_size later.
+    struct razer_report report      = razer_new_report(0x03, 0x0B, 0x00); // Set the data_size later.
 
     if (rows < 0 || columns < 0) {
         printk(KERN_WARNING "hid-razer: set_key_row: unsupported device\n");
@@ -258,7 +258,7 @@ int razer_set_key_colors(struct razer_device *razer_dev,
 int razer_set_none_mode(struct razer_device *razer_dev)
 {
     int retval;
-    struct razer_report report = new_razer_report(0x03, 0x0A, 0x01);
+    struct razer_report report = razer_new_report(0x03, 0x0A, 0x01);
     report.arguments[0] = 0x00; // Effect ID
     report.crc = razer_calculate_crc(&report);
 
@@ -276,7 +276,7 @@ int razer_set_static_mode(struct razer_device *razer_dev,
     struct razer_rgb *color)
 {
     int retval;
-    struct razer_report report = new_razer_report(0x03, 0x0A, 0x04);
+    struct razer_report report = razer_new_report(0x03, 0x0A, 0x04);
     report.arguments[0] = 0x06;     // Effect ID
     report.arguments[1] = color->r;
     report.arguments[2] = color->g;
@@ -296,7 +296,7 @@ int razer_set_static_mode(struct razer_device *razer_dev,
 int razer_set_custom_mode(struct razer_device *razer_dev)
 {
     int retval;
-    struct razer_report report = new_razer_report(0x03, 0x0A, 0x02);
+    struct razer_report report = razer_new_report(0x03, 0x0A, 0x02);
     report.arguments[0] = 0x05; // Effect ID
     report.arguments[1] = 0x00; // Data frame ID
     report.crc = razer_calculate_crc(&report);
@@ -315,7 +315,7 @@ int razer_set_wave_mode(struct razer_device *razer_dev,
     unsigned char direction)
 {
     int retval;
-    struct razer_report report = new_razer_report(0x03, 0x0A, 0x02);
+    struct razer_report report = razer_new_report(0x03, 0x0A, 0x02);
 
     if (direction != 1 && direction != 2) {
         printk(KERN_WARNING "hid-razer: wave_mode: wave direction must be 1 or 2: got: %d\n", direction);
@@ -339,7 +339,7 @@ int razer_set_wave_mode(struct razer_device *razer_dev,
 int razer_set_spectrum_mode(struct razer_device *razer_dev)
 {
     int retval;
-    struct razer_report report = new_razer_report(0x03, 0x0A, 0x01);
+    struct razer_report report = razer_new_report(0x03, 0x0A, 0x01);
     report.arguments[0] = 0x04; // Effect ID
     report.crc = razer_calculate_crc(&report);
 
@@ -357,7 +357,7 @@ int razer_set_reactive_mode(struct razer_device *razer_dev,
     unsigned char speed, struct razer_rgb *color)
 {
     int retval = 0;
-    struct razer_report report = new_razer_report(0x03, 0x0A, 0x05);
+    struct razer_report report = razer_new_report(0x03, 0x0A, 0x05);
 
     if (speed <= 0 || speed >= 4) {
         printk(KERN_WARNING "hid-razer: reactive_mode: speed must be within 1-3: got: %d\n", speed);
@@ -389,7 +389,7 @@ int razer_set_starlight_mode(struct razer_device *razer_dev,
     unsigned char speed, struct razer_rgb *color1, struct razer_rgb *color2)
 {
     int retval;
-    struct razer_report report = new_razer_report(0x03, 0x0A, 0x00); // Data size initial to 0
+    struct razer_report report = razer_new_report(0x03, 0x0A, 0x00); // Data size initial to 0
     report.arguments[0] = 0x19; // Effect ID
     report.arguments[2] = 0x01; // Speed
 
@@ -443,7 +443,7 @@ int razer_set_breath_mode(struct razer_device *razer_dev,
     struct razer_rgb *color1, struct razer_rgb *color2)
 {
     int retval;
-    struct razer_report report = new_razer_report(0x03, 0x0A, 0x00); // Data size initial to 0
+    struct razer_report report = razer_new_report(0x03, 0x0A, 0x00); // Data size initial to 0
     report.arguments[0] = 0x03;             // Effect ID
 
     if (color1 == NULL && color2 == NULL) {
@@ -960,10 +960,17 @@ static int razer_kbd_probe(struct hid_device *hdev,
         hid_err(hdev, "can't alloc razer device descriptor\n");
         return -ENOMEM;
     }
+
+    retval = razer_init_device(razer_dev, usb_dev);
+    if (retval != 0) {
+        hid_err(hdev, "failed to initialize razer device descriptor\n");
+        goto exit_free;
+    }
+
+    // Attach the custom data.
     dev_set_drvdata(dev, razer_dev);
 
-    // Initialize the razer device data.
-    razer_dev->usb_dev      = usb_dev;
+    // Set the default report index.
     razer_dev->report_index = RAZER_DEFAULT_REPORT_INDEX;
 
 
