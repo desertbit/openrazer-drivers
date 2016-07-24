@@ -108,6 +108,8 @@ int _razer_send(struct razer_device *razer_dev, struct razer_report* report)
             size,                                               // Length
             USB_CTRL_SET_TIMEOUT);
 
+    usleep_range(600, 800);
+
     kfree(buf);
 
     return ((len < 0) ? len : ((len != size) ? -EIO : 0));
@@ -149,6 +151,8 @@ int _razer_receive(struct razer_device *razer_dev, struct razer_report* report)
             size,
             USB_CTRL_SET_TIMEOUT);
 
+    usleep_range(600, 800);
+
     return ((len < 0) ? len : ((len != size) ? -EIO : 0));
 }
 
@@ -181,7 +185,7 @@ int _razer_send_with_response(struct razer_device *razer_dev,
         return retval;
     }
 
-    for (r=0; r < 1000; r++) {
+    for (r=0; r < 100; r++) {
         retval = _razer_receive(razer_dev, response_report);
         if (retval != 0) {
             return retval;
@@ -222,6 +226,9 @@ int _razer_send_with_response(struct razer_device *razer_dev,
             return -EINVAL;
         }
     }
+
+    dev_err(&razer_dev->usb_dev->dev,
+            "razer_send_with_response: request failed: device is busy\n");
 
     return -EBUSY;
 }
