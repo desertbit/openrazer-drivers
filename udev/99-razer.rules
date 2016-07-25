@@ -1,6 +1,7 @@
 # Razer Keyboards
 KERNEL=="????:????:????.????", DRIVERS=="usb", SUBSYSTEMS=="usb", ATTRS{idVendor}=="1532", ATTRS{idProduct}=="0205", ENV{is_razer}="yes"    # Razer Blade Stealth 2016
 KERNEL=="????:????:????.????", DRIVERS=="usb", SUBSYSTEMS=="usb", ATTRS{idVendor}=="1532", ATTRS{idProduct}=="020f", ENV{is_razer}="yes"    # Razer Blade 14 2016
+KERNEL=="????:????:????.????", DRIVERS=="usb", SUBSYSTEMS=="usb", ATTRS{idVendor}=="1532", ATTRS{idProduct}=="0203", ENV{is_razer}="yes"    # BlackWidow Chroma
 
 # Run action
 SUBSYSTEM=="hid", DRIVER=="hid-generic", ENV{is_razer}=="yes", ATTRS{bInterfaceNumber}=="02", RUN+="razer_mount hid-razer $kernel"

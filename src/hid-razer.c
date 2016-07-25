@@ -67,10 +67,22 @@ int razer_get_firmware_version(struct razer_device *razer_dev, unsigned char* fw
 int razer_get_brightness(struct razer_device *razer_dev)
 {
     int retval;
+    struct usb_device *usb_dev = razer_dev->usb_dev;
     struct razer_report response_report;
+    int response_value_index = 1;
 
     struct razer_report request_report = razer_new_report(0x0E, 0x84, 0x01);
-    request_report.arguments[0] = 0x01;
+    request_report.arguments[0] = 0x01;     // LED Class
+
+    // Device support.
+    if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
+        request_report.command_class    = 0x03;
+        request_report.command_id       = 0x83;
+        request_report.arguments[1]     = 0x05;     // Backlight LED
+        request_report.data_size        = 0x02;
+        response_value_index            = 2;
+    }
+
     request_report.crc = razer_calculate_crc(&request_report);
 
     retval = razer_send_with_response(razer_dev, &request_report, &response_report);
@@ -79,17 +91,28 @@ int razer_get_brightness(struct razer_device *razer_dev)
         return retval;
     }
 
-    return response_report.arguments[1];
+    return response_report.arguments[response_value_index];
 }
 
 // Set the keyboard brightness.
 int razer_set_brightness(struct razer_device *razer_dev, unsigned char brightness)
 {
     int retval;
+    struct usb_device *usb_dev = razer_dev->usb_dev;
 
     struct razer_report report = razer_new_report(0x0E, 0x04, 0x02);
     report.arguments[0] = 0x01;
     report.arguments[1] = brightness;
+
+    // Device support.
+    if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
+        report.command_class    = 0x03;
+        report.command_id       = 0x03;
+        report.arguments[1]     = 0x05;     // Backlight LED
+        report.arguments[2]     = brightness;
+        report.data_size        = 0x03;
+    }
+
     report.crc = razer_calculate_crc(&report);
 
     retval = razer_send_check_response(razer_dev, &report);
@@ -547,6 +570,10 @@ static ssize_t razer_attr_read_device_type(struct device *dev,
 
         case USB_DEVICE_ID_RAZER_BLADE_14_2016:
             device_type = "Razer Blade 14 2016\n";
+            break;
+
+        case USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA:
+            device_type = "Razer BlackWidow Chroma\n";
             break;
 
         default:
@@ -1032,6 +1059,36 @@ static int razer_kbd_probe(struct hid_device *hdev,
         if (retval)
             goto exit_free;
     }
+    else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA)
+    {
+        retval = device_create_file(dev, &dev_attr_set_key_colors);
+        if (retval)
+            goto exit_free;
+
+        // Modes
+        retval = device_create_file(dev, &dev_attr_mode_none);
+        if (retval)
+            goto exit_free;
+        retval = device_create_file(dev, &dev_attr_mode_static);
+        if (retval)
+            goto exit_free;
+        retval = device_create_file(dev, &dev_attr_mode_custom);
+        if (retval)
+            goto exit_free;
+        retval = device_create_file(dev, &dev_attr_mode_wave);
+        if (retval)
+            goto exit_free;
+        retval = device_create_file(dev, &dev_attr_mode_spectrum);
+        if (retval)
+            goto exit_free;
+        retval = device_create_file(dev, &dev_attr_mode_reactive);
+        if (retval)
+            goto exit_free;
+        retval = device_create_file(dev, &dev_attr_mode_breath);
+        if (retval)
+            goto exit_free;
+    }
+
 
     retval = hid_parse(hdev);
     if (retval)    {
@@ -1089,6 +1146,17 @@ static void razer_kbd_disconnect(struct hid_device *hdev)
         device_remove_file(dev, &dev_attr_mode_breath);
         device_remove_file(dev, &dev_attr_mode_starlight);
     }
+    else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA)
+    {
+        // Modes
+        device_remove_file(dev, &dev_attr_mode_none);
+        device_remove_file(dev, &dev_attr_mode_static);
+        device_remove_file(dev, &dev_attr_mode_custom);
+        device_remove_file(dev, &dev_attr_mode_wave);
+        device_remove_file(dev, &dev_attr_mode_spectrum);
+        device_remove_file(dev, &dev_attr_mode_reactive);
+        device_remove_file(dev, &dev_attr_mode_breath);
+    }
 
 
     hid_hw_stop(hdev);
@@ -1105,6 +1173,7 @@ static void razer_kbd_disconnect(struct hid_device *hdev)
 static const struct hid_device_id razer_devices[] = {
     { HID_USB_DEVICE(USB_VENDOR_ID_RAZER, USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016) },
     { HID_USB_DEVICE(USB_VENDOR_ID_RAZER, USB_DEVICE_ID_RAZER_BLADE_14_2016) },
+    { HID_USB_DEVICE(USB_VENDOR_ID_RAZER, USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) },
     { }
 };
 

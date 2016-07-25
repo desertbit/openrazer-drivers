@@ -185,7 +185,8 @@ int _razer_send_with_response(struct razer_device *razer_dev,
         return retval;
     }
 
-    for (r=0; r < 100; r++) {
+    // Retry 20 times when busy -> 250 milliseconds -> max 5 seconds wait
+    for (r=0; r < 20; r++) {
         retval = _razer_receive(razer_dev, response_report);
         if (retval != 0) {
             return retval;
@@ -211,13 +212,16 @@ int _razer_send_with_response(struct razer_device *razer_dev,
         switch (response_report->status) {
         case RAZER_STATUS_SUCCESS:
             return 0;
+
         case RAZER_STATUS_BUSY:
-            msleep(500);
+            msleep(250);
             continue;
+
         case RAZER_STATUS_FAILURE:
         case RAZER_STATUS_TIMEOUT:
         case RAZER_STATUS_NOT_SUPPORTED:
             return -EINVAL;
+
         default:
             dev_err(&razer_dev->usb_dev->dev,
                     "razer_send_with_response: "

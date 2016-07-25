@@ -6,6 +6,7 @@ set -e
 
 DRIVER_PATH="/sys/bus/hid/drivers/hid-razer"
 DEVICE_PATH=""
+declare -a DEVICES
 
 COLOR='\033[0;31m'
 NC='\033[0m' # No Color
@@ -16,22 +17,46 @@ if [[ ! -d "$DRIVER_PATH" ]]; then
     exit 1
 fi
 
-# Find an attached device.
+# Find all available supported devices.
 for d in "$DRIVER_PATH"/*
 do
     if [[ $d == *:*:*\.* ]]; then
-        DEVICE_PATH="$d"
-        break
+        DEVICES+=($(basename "$d"))
     fi
 done
 
-if [[ "$DEVICE_PATH" == "" ]]; then
+if [[ "${#DEVICES[@]}" -le "0" ]]; then
     echo "no supported Razer device attached."
     exit 1
+elif [[ "${#DEVICES[@]}" -eq "1" ]]; then
+    DEVICE_PATH="$DRIVER_PATH/${DEVICES[0]}"
+else
+    echo "Available devices:"
+
+    i=1
+    for d in ${DEVICES[@]}; do
+        echo -n " $i) "
+        cat "$DRIVER_PATH/$d/device_type" | tr -d '\n'
+        echo " ($d)"
+
+        i=$[$i +1]
+    done
+
+    read -p "Choose device [1]: " d
+    d=${d:-1}
+    d=$[$d -1]
+    d="${DEVICES[$d]}"
+
+    if [[ "$d" == "" ]]; then
+        echo "invalid device path."
+        exit 1
+    fi
+
+    DEVICE_PATH="$DRIVER_PATH/$d"
 fi
 
-echo "Using Razer device $DEVICE_PATH"
 
+echo "Using Razer device $DEVICE_PATH"
 
 echo -n -e "${COLOR}get_firmware_version:${NC} "
 cat "$DEVICE_PATH/get_firmware_version"
