@@ -182,7 +182,11 @@ int razer_get_rows(struct usb_device *usb_dev)
     }
     else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_14_2016) {
         return RAZER_BLADE_14_2016_ROWS;
-    } else {
+    }
+    else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
+        return RAZER_BLACKWIDOW_CHROMA_ROWS;
+    }
+    else {
         return -EINVAL;
     }
 }
@@ -196,7 +200,11 @@ int razer_get_columns(struct usb_device *usb_dev)
     }
     else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_14_2016) {
         return RAZER_BLADE_14_2016_COLUMNS;
-    } else {
+    }
+    else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
+        return RAZER_BLACKWIDOW_CHROMA_COLUMNS;
+    }
+    else {
         return -EINVAL;
     }
 }
@@ -1150,6 +1158,8 @@ static void razer_kbd_disconnect(struct hid_device *hdev)
     }
     else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA)
     {
+        device_remove_file(dev, &dev_attr_set_key_colors);
+
         // Modes
         device_remove_file(dev, &dev_attr_mode_none);
         device_remove_file(dev, &dev_attr_mode_static);

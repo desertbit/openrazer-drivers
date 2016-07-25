@@ -30,10 +30,14 @@
 // Report indexes.
 #define RAZER_DEFAULT_REPORT_INDEX  0x02
 
-// Keyboard rows and columns.
+// Keyboard rows and columns:
 #define RAZER_STEALTH_2016_ROWS     0x06
 #define RAZER_STEALTH_2016_COLUMNS  0x10
+
 #define RAZER_BLADE_14_2016_ROWS    0x06
 #define RAZER_BLADE_14_2016_COLUMNS 0x10
+
+#define RAZER_BLACKWIDOW_CHROMA_ROWS    0x06
+#define RAZER_BLACKWIDOW_CHROMA_COLUMNS 0x16
 
 #endif // __HID_RAZER_H
