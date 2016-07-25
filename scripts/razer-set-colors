@@ -114,7 +114,6 @@ function set_key_color {
         while true; do
             read -p "Set color [$LAST_COLOR]: " color
             color=${color:-$LAST_COLOR}
-            LAST_COLOR="$color"
 
             case $color in
                 white|w)
@@ -149,6 +148,7 @@ function set_key_color {
                     continue
             esac
 
+            LAST_COLOR="$color"
             break
         done
 
