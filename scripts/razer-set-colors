@@ -95,6 +95,17 @@ function print_available_colors {
     echo -e "\033[0;35mpurple[p]${NC}"
 }
 
+function reset_all_colors {
+    colors=""
+
+    for (( i=0; i<$NUM_COLORS; i++ ))
+    do
+        colors="$colors$BLACK"
+    done
+
+    echo -e -n "$colors" > "$DEVICE_PATH/set_key_colors"
+}
+
 function set_key_color {
     echo -e "\n${COLOR}Row:${NC} $CUR_ROW ${COLOR}Column:${NC} $CUR_COLUMN"
     print_available_colors
@@ -165,6 +176,9 @@ function set_key_color {
     done
 }
 
+
+
+reset_all_colors
 
 for (( x=0; x<$NUM_COLORS; x++ ))
 do
