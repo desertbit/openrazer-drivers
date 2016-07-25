@@ -12,7 +12,7 @@ All notable changes to this project will be documented in the **[CHANGELOG.md](C
 |:-------------------------|:---------|:------------------------------------------------------------------------------------------|
 | Razer Blade Stealth 2016 | Keyboard | brightness control, lid logo control, FN mode control, all lighting modes, set key colors |
 | Razer Blade 14 2016      | Keyboard | brightness control, lid logo control, FN mode control, all lighting modes, set key colors |
-| BlackWidow Chroma        | Keyboard | brightness control, all lighting modes, set_key_colors                                    |
+| BlackWidow Chroma        | Keyboard | brightness control, all lighting modes, set key colors                                    |
 
 
 ## Installation
