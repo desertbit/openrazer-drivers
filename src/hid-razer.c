@@ -267,7 +267,9 @@ int razer_set_key_colors(struct razer_device *razer_dev,
     }
 
     for(i = 0; i < rows; i++) {
-        retval = razer_set_key_row(razer_dev, i, (unsigned char*)&row_cols[i*columns], columns * 3);
+        retval = razer_set_key_row(razer_dev, i,
+                    (unsigned char*)&row_cols[i*columns*3],
+                    columns * 3);
         if (retval != 0) {
             printk(KERN_WARNING "hid-razer: set_key_colors: failed to set colors for row: %d\n", i);
             return retval;
