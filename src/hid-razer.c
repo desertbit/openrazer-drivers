@@ -977,9 +977,9 @@ static DEVICE_ATTR(mode_starlight,  0220, NULL, razer_attr_write_mode_starlight)
 //#############################//
 
 /*
- * Probe method is ran whenever a device is bound to the driver
+ * Probe method is ran whenever a device is bound to the driver.
  */
-static int razer_kbd_probe(struct hid_device *hdev,
+static int razer_probe(struct hid_device *hdev,
              const struct hid_device_id *id)
 {
     int retval;
@@ -1117,9 +1117,9 @@ exit_free:
 
 
 /*
- * Driver unbind function
+ * Driver unbind function.
  */
-static void razer_kbd_disconnect(struct hid_device *hdev)
+static void razer_disconnect(struct hid_device *hdev)
 {
     struct device *dev              = &hdev->dev;
     struct usb_device *usb_dev      = interface_to_usbdev(to_usb_interface(dev->parent));
@@ -1173,6 +1173,44 @@ static void razer_kbd_disconnect(struct hid_device *hdev)
 
 
 
+//################################//
+//### Power Management Support ###//
+//################################//
+
+#ifdef CONFIG_PM
+
+/*
+ * Called when the device is going to be suspended.
+ */
+static int razer_suspend(struct hid_device *hdev, pm_message_t message)
+{
+    return 0;
+}
+
+
+
+/*
+ * Called when the device is being resumed by the system.
+ */
+static int razer_resume(struct hid_device *hdev)
+{
+    return 0;
+}
+
+
+
+/*
+ * Called when the suspended device has been reset instead of being resumed.
+ */
+static int razer_reset_resume(struct hid_device *hdev)
+{
+    return 0;
+}
+
+#endif
+
+
+
 //###############################//
 //### Device ID mapping table ###//
 //###############################//
@@ -1192,11 +1230,18 @@ MODULE_DEVICE_TABLE(hid, razer_devices);
 //### Describes the contents of the driver ###//
 //############################################//
 
-static struct hid_driver razer_kbd_driver = {
-    .name       = "hid-razer",
-    .id_table   = razer_devices,
-    .probe      = razer_kbd_probe,
-    .remove     = razer_kbd_disconnect
+static struct hid_driver razer_driver = {
+    .name           = "hid-razer",
+    .id_table       = razer_devices,
+
+#ifdef CONFIG_PM
+    .suspend        = razer_suspend,
+    .resume         = razer_resume,
+    .reset_resume   = razer_reset_resume,
+#endif
+
+    .probe          = razer_probe,
+    .remove         = razer_disconnect
 };
 
-module_hid_driver(razer_kbd_driver);
+module_hid_driver(razer_driver);

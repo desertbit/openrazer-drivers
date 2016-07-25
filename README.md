@@ -17,6 +17,10 @@ All notable changes to this project will be documented in the **[CHANGELOG.md](C
 
 ## Installation
 
+### Packages
+
+- [ArchLinux AUR Package](https://aur.archlinux.org/packages/razer-drivers-dkms/)
+
 ### Automatic installation with DKMS
 
 This requires DKMS to be installed.
@@ -37,6 +41,7 @@ This requires recompilation on every kernel update.
 
 ## TODO
 
+- Create a debian package.
 - BlackWidow Chroma: add support for macro keys and game mode
 - Add information from https://github.com/pez2001/razer_chroma_drivers/wiki
 
