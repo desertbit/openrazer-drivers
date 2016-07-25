@@ -685,11 +685,6 @@ static ssize_t razer_attr_write_set_key_colors(struct device *dev,
     struct razer_device *razer_dev = dev_get_drvdata(dev);
     int retval;
 
-    retval = razer_set_none_mode(razer_dev);
-    if (retval != 0) {
-        return retval;
-    }
-
     retval = razer_set_key_colors(razer_dev, (unsigned char*)&buf[0], count);
     if (retval != 0) {
         return retval;
