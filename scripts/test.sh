@@ -45,14 +45,13 @@ else
     read -p "Choose device [1]: " d
     d=${d:-1}
     d=$[$d -1]
-    d="${DEVICES[$d]}"
 
-    if [[ "$d" == "" ]]; then
+    if [[ "$d" -lt "0" ]] || [[ "$d" -ge "${#DEVICES[@]}" ]]; then
         echo "invalid device path."
         exit 1
     fi
 
-    DEVICE_PATH="$DRIVER_PATH/$d"
+    DEVICE_PATH="$DRIVER_PATH/${DEVICES[$d]}"
 fi
 
 
@@ -188,4 +187,26 @@ if [[ -e "$DEVICE_PATH/mode_breath" ]]; then
     echo -e "two colors"
     echo -e -n "\xFF\xFF\x00\xFF\xFF\xFF" > "$DEVICE_PATH/mode_breath"
     sleep 7
+fi
+
+# set_key_colors
+if [[ -e "$DEVICE_PATH/set_key_colors" ]]; then
+    num_colors=$(cat "$DEVICE_PATH/get_info" | grep "colors=" | sed 's|colors=||g')
+    colors=""
+
+    for (( i=0; i<$num_colors; i++ ))
+    do
+        n=$((i%3))
+        if [[ "$n" -eq "1" ]]; then
+            colors="$colors\x00\xFF\x00"
+        elif [[ "$n" -eq "2" ]]; then
+            colors="$colors\x00\x00\xFF"
+        else
+            colors="$colors\xFF\x00\x00"
+        fi
+    done
+
+    echo -e "${COLOR}set custom key colors${NC}"
+    echo -e -n "$colors" > "$DEVICE_PATH/set_key_colors"
+    sleep 3
 fi
