@@ -185,8 +185,8 @@ int _razer_send_with_response(struct razer_device *razer_dev,
         return retval;
     }
 
-    // Retry 20 times when busy -> 250 milliseconds -> max 5 seconds wait
-    for (r=0; r < 20; r++) {
+    // Retry 40 times when busy -> 125 milliseconds -> max 5 seconds wait
+    for (r=0; r < 40; r++) {
         retval = _razer_receive(razer_dev, response_report);
         if (retval != 0) {
             return retval;
@@ -214,7 +214,7 @@ int _razer_send_with_response(struct razer_device *razer_dev,
             return 0;
 
         case RAZER_STATUS_BUSY:
-            msleep(250);
+            msleep(125);
             continue;
 
         case RAZER_STATUS_FAILURE:
