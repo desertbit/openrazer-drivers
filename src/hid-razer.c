@@ -153,7 +153,8 @@ int razer_set_logo(struct razer_device *razer_dev, unsigned char state)
 int razer_set_fn_toggle(struct razer_device *razer_dev, unsigned char state)
 {
     int retval;
-    struct razer_report report = razer_new_report(0x02, 0x06, 0x02);
+    struct razer_data *data     = razer_dev->data;
+    struct razer_report report  = razer_new_report(0x02, 0x06, 0x02);
 
     if (state != 0 && state != 1) {
         printk(KERN_WARNING "hid-razer: fn_toggle: toggle FN state must be either 0 or 1: got: %d\n", state);
@@ -169,6 +170,9 @@ int razer_set_fn_toggle(struct razer_device *razer_dev, unsigned char state)
         razer_print_err_report(&report, "hid-razer", "fn_toggle: request failed");
         return retval;
     }
+
+    // Save the new fn toggle state.
+    data->fn_toggle_state = (char)state;
 
     return 0;
 }
@@ -282,6 +286,24 @@ int razer_set_key_colors(struct razer_device *razer_dev,
             printk(KERN_WARNING "hid-razer: set_key_colors: failed to set colors for row: %d\n", i);
             return retval;
         }
+    }
+
+    return 0;
+}
+
+// Enable keyboard macro keys. Keycodes for the macro keys are 191-195 for M1-M5.
+int razer_activate_macro_keys(struct razer_device *razer_dev)
+{
+    int retval;
+    struct razer_report report = razer_new_report(0x00, 0x04, 0x02);
+    report.arguments[0] = 0x02;
+    report.arguments[1] = 0x04;
+    report.crc = razer_calculate_crc(&report);
+
+    retval = razer_send_check_response(razer_dev, &report);
+    if (retval != 0) {
+        razer_print_err_report(&report, "hid-razer", "activate_macro_keys: request failed");
+        return retval;
     }
 
     return 0;
@@ -977,6 +999,53 @@ static DEVICE_ATTR(mode_starlight,  0220, NULL, razer_attr_write_mode_starlight)
 //#############################//
 
 /*
+ * Initialize a razer_data struct.
+ */
+int razer_init_data(struct razer_data *data)
+{
+    // Set all values to an unset state.
+    data->macro_keys_state  = -1;
+    data->fn_toggle_state   = -1;
+
+    return 0;
+}
+
+
+
+/*
+ * Sets the device to the specific states if set.
+ */
+int razer_load_states(struct razer_device *razer_dev)
+{
+    int retval;
+    struct razer_data *data = razer_dev->data;
+
+    if (!data) {
+        return 0;
+    }
+
+    // Enable the macro keys if required.
+    if (data->macro_keys_state == 1) {
+        retval = razer_activate_macro_keys(razer_dev);
+        if (retval != 0) {
+            return retval;
+        }
+    }
+
+    // Set the FN toggle mode if required.
+    if (data->fn_toggle_state >= 0) {
+        retval = razer_set_fn_toggle(razer_dev, (unsigned char)data->fn_toggle_state);
+        if (retval != 0) {
+            return retval;
+        }
+    }
+
+    return 0;
+}
+
+
+
+/*
  * Probe method is ran whenever a device is bound to the driver.
  */
 static int razer_probe(struct hid_device *hdev,
@@ -986,6 +1055,7 @@ static int razer_probe(struct hid_device *hdev,
     struct device *dev              = &hdev->dev;
     struct usb_device *usb_dev      = interface_to_usbdev(to_usb_interface(dev->parent));
     struct razer_device *razer_dev;
+    struct razer_data *data;
 
     razer_dev = kzalloc(sizeof(struct razer_device), GFP_KERNEL);
     if (!razer_dev) {
@@ -996,13 +1066,24 @@ static int razer_probe(struct hid_device *hdev,
     retval = razer_init_device(razer_dev, usb_dev);
     if (retval != 0) {
         hid_err(hdev, "failed to initialize razer device descriptor\n");
+        goto exit_free_razer_dev;
+    }
+
+    data = kzalloc(sizeof(struct razer_data), GFP_KERNEL);
+    if (!data) {
+        hid_err(hdev, "can't alloc razer data\n");
+        retval = -ENOMEM;
+        goto exit_free_razer_dev;
+    }
+
+    retval = razer_init_data(data);
+    if (retval != 0) {
+        hid_err(hdev, "failed to initialize razer data\n");
         goto exit_free;
     }
 
-    // Attach the custom data.
     dev_set_drvdata(dev, razer_dev);
-
-    // Set the default report index.
+    razer_dev->data         = data;
     razer_dev->report_index = RAZER_DEFAULT_REPORT_INDEX;
 
 
@@ -1028,6 +1109,9 @@ static int razer_probe(struct hid_device *hdev,
     if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016 ||
             usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_14_2016)
     {
+        // Set the default fn toggle state.
+        data->fn_toggle_state = 1;
+
         retval = device_create_file(dev, &dev_attr_set_logo);
         if (retval)
             goto exit_free;
@@ -1066,6 +1150,9 @@ static int razer_probe(struct hid_device *hdev,
     }
     else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA)
     {
+        // Enable the macro keys state.
+        data->macro_keys_state = 1;
+
         retval = device_create_file(dev, &dev_attr_set_key_colors);
         if (retval)
             goto exit_free;
@@ -1108,8 +1195,14 @@ static int razer_probe(struct hid_device *hdev,
 
     usb_disable_autosuspend(usb_dev);
 
+    // Finally load any set states. Ignore errors. They are not fatal.
+    // Errors will be logged.
+    razer_load_states(razer_dev);
+
     return 0;
 exit_free:
+    kfree(data);
+exit_free_razer_dev:
     kfree(razer_dev);
     return retval;
 }
@@ -1124,6 +1217,7 @@ static void razer_disconnect(struct hid_device *hdev)
     struct device *dev              = &hdev->dev;
     struct usb_device *usb_dev      = interface_to_usbdev(to_usb_interface(dev->parent));
     struct razer_device *razer_dev  = dev_get_drvdata(dev);
+    struct razer_data *data         = razer_dev->data;
 
     // Remove the default files
     device_remove_file(dev, &dev_attr_get_firmware_version);
@@ -1168,6 +1262,7 @@ static void razer_disconnect(struct hid_device *hdev)
 
     hid_hw_stop(hdev);
     kfree(razer_dev);
+    kfree(data);
     dev_info(dev, "razer device disconnected\n");
 }
 
@@ -1194,6 +1289,13 @@ static int razer_suspend(struct hid_device *hdev, pm_message_t message)
  */
 static int razer_resume(struct hid_device *hdev)
 {
+    struct device *dev              = &hdev->dev;
+    struct razer_device *razer_dev  = dev_get_drvdata(dev);
+
+    // Load any set states. Ignore errors. They are not fatal.
+    // Errors will be logged.
+    razer_load_states(razer_dev);
+
     return 0;
 }
 
@@ -1204,7 +1306,7 @@ static int razer_resume(struct hid_device *hdev)
  */
 static int razer_reset_resume(struct hid_device *hdev)
 {
-    return 0;
+    return razer_resume(hdev);
 }
 
 #endif

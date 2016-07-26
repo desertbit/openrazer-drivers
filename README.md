@@ -12,7 +12,7 @@ All notable changes to this project will be documented in the **[CHANGELOG.md](C
 |:-------------------------|:---------|:------------------------------------------------------------------------------------------|
 | Razer Blade Stealth 2016 | Keyboard | brightness control, lid logo control, FN mode control, all lighting modes, set key colors |
 | Razer Blade 14 2016      | Keyboard | brightness control, lid logo control, FN mode control, all lighting modes, set key colors |
-| BlackWidow Chroma        | Keyboard | brightness control, all lighting modes, set key colors                                    |
+| BlackWidow Chroma        | Keyboard | brightness control, macro keys, all lighting modes, set key colors                        |
 
 
 ## Installation
@@ -42,7 +42,7 @@ This requires recompilation on every kernel update.
 ## TODO
 
 - Create a debian package.
-- BlackWidow Chroma: add support for macro keys and game mode
+- BlackWidow Chroma: add support for game mode
 - Add information from https://github.com/pez2001/razer_chroma_drivers/wiki
 
 

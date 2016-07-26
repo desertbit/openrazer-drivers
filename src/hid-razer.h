@@ -21,6 +21,8 @@
 #ifndef __HID_RAZER_H
 #define __HID_RAZER_H
 
+#include <linux/types.h>
+
 
 
 //#################//
@@ -39,5 +41,16 @@
 
 #define RAZER_BLACKWIDOW_CHROMA_ROWS    0x06
 #define RAZER_BLACKWIDOW_CHROMA_COLUMNS 0x16
+
+
+
+//#############//
+//### Types ###//
+//#############//
+
+struct razer_data {
+    char macro_keys_state;
+    char fn_toggle_state;
+};
 
 #endif // __HID_RAZER_H

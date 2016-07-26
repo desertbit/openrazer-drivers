@@ -48,7 +48,8 @@ MODULE_VERSION("1.0.0");
 int razer_init_device(struct razer_device *razer_dev,
     struct usb_device *usb_dev)
 {
-    razer_dev->usb_dev = usb_dev;
+    razer_dev->data     = NULL;
+    razer_dev->usb_dev  = usb_dev;
     mutex_init(&razer_dev->lock);
 
     return 0;
