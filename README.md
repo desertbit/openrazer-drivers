@@ -39,6 +39,32 @@ This requires recompilation on every kernel update.
 ```
 
 
+## Driver Device Files
+
+Device files created by the driver in `/sys/bus/hid/drivers/hid-razer/${ID}`
+
+
+| FILE                 | ACCESS | DESCRIPTION                                                                         |
+|:---------------------|:-------|:------------------------------------------------------------------------------------|
+| device_type          | r      | Returns a friendly device type string.                                              |
+| get_serial           | r      | Gets the serial number from the device.                                             |
+| get_firmware_version | r      | Gets the firmware version from the device.                                          |
+| brightness           | rw     | Returns the brightness value from 0-255 or sets the brightness to the ASCII number. |
+| fn_mode              | rw     | Returns the current fn mode or sets the FN mode to the ASCII number.                |
+| set_logo             | w      | Sets the logo lighting state to the ASCII number written to this file.              |
+| set_key_colors       | w      | Writes the color rows on the keyboard. Takes in all the colors for the keyboard.    |
+| get_key_rows         | r      | Returns the amount of key rows.                                                     |
+| get_key_columns      | r      | Returns the amount of key columns.                                                  |
+| mode_none            | w      |                                                                                     |
+| mode_static          | w      |                                                                                     |
+| mode_custom          | w      |                                                                                     |
+| mode_wave            | w      |                                                                                     |
+| mode_spectrum        | w      |                                                                                     |
+| mode_reactive        | w      |                                                                                     |
+| mode_breath          | w      |                                                                                     |
+| mode_starlight       | w      |                                                                                     |
+
+
 ## TODO
 
 - Create a debian package.

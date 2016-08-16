@@ -545,7 +545,7 @@ int razer_set_breath_mode(struct razer_device *razer_dev,
 
 /*
  * Read device file "get_serial"
- * Gets the serial number from the device,
+ * Gets the serial number from the device.
  * Returns a string.
  */
 static ssize_t razer_attr_read_get_serial(struct device *dev,
@@ -562,7 +562,7 @@ static ssize_t razer_attr_read_get_serial(struct device *dev,
 
 /**
  * Read device file "get_firmware_version"
- * Gets the firmware version from the device,
+ * Gets the firmware version from the device.
  * Returns a string.
  */
 static ssize_t razer_attr_read_get_firmware_version(struct device *dev,
@@ -746,7 +746,7 @@ static ssize_t razer_attr_read_fn_mode(struct device *dev,
 
 /*
  * Write device file "set_key_colors"
- * Writes the color rows on the keyboard. Takes in all the colors for the keyboard
+ * Writes the color rows on the keyboard. Takes in all the colors for the keyboard.
  */
 static ssize_t razer_attr_write_set_key_colors(struct device *dev,
     struct device_attribute *attr, const char *buf, size_t count)
