@@ -66,9 +66,6 @@ cat "$DEVICE_PATH/get_serial"
 echo -n -e "${COLOR}device_type:${NC} "
 cat "$DEVICE_PATH/device_type"
 
-echo -e "${COLOR}get_info:${NC}"
-cat "$DEVICE_PATH/get_info"
-
 echo -n -e "${COLOR}brightness:${NC} "
 cat "$DEVICE_PATH/brightness"
 
@@ -97,6 +94,18 @@ cat "$DEVICE_PATH/brightness"
 sleep 2
 
 
+# get_key_rows
+if [[ -e "$DEVICE_PATH/get_key_rows" ]]; then
+    echo -n -e "${COLOR}get_key_rows:${NC} "
+    cat "$DEVICE_PATH/get_key_rows"
+fi
+
+# get_key_columns
+if [[ -e "$DEVICE_PATH/get_key_columns" ]]; then
+    echo -n -e "${COLOR}get_key_columns:${NC} "
+    cat "$DEVICE_PATH/get_key_columns"
+fi
+
 # set_logo
 if [[ -e "$DEVICE_PATH/set_logo" ]]; then
     echo -e "${COLOR}set logo${NC} off"
@@ -107,13 +116,20 @@ if [[ -e "$DEVICE_PATH/set_logo" ]]; then
     sleep 2
 fi
 
-# set_fn_toggle
-if [[ -e "$DEVICE_PATH/set_fn_toggle" ]]; then
+# fn_mode
+if [[ -e "$DEVICE_PATH/fn_mode" ]]; then
+    echo -n -e "${COLOR}fn_mode:${NC} "
+    cat "$DEVICE_PATH/fn_mode"
+    sleep 2
     echo -e "${COLOR}set fn mode${NC} 1"
-    echo -n "1" > "$DEVICE_PATH/set_fn_toggle"
+    echo -n "1" > "$DEVICE_PATH/fn_mode"
+    echo -n -e "${COLOR}fn_mode:${NC} "
+    cat "$DEVICE_PATH/fn_mode"
     sleep 2
     echo -e "${COLOR}set fn mode${NC} 0"
-    echo -n "0" > "$DEVICE_PATH/set_fn_toggle"
+    echo -n "0" > "$DEVICE_PATH/fn_mode"
+    echo -n -e "${COLOR}fn_mode:${NC} "
+    cat "$DEVICE_PATH/fn_mode"
     sleep 2
 fi
 
@@ -191,7 +207,9 @@ fi
 
 # set_key_colors
 if [[ -e "$DEVICE_PATH/set_key_colors" ]]; then
-    num_colors=$(cat "$DEVICE_PATH/get_info" | grep "colors=" | sed 's|colors=||g')
+    rows=$(cat "$DEVICE_PATH/get_key_rows")
+    columns=$(cat "$DEVICE_PATH/get_key_columns")
+    num_colors=$(($rows * $columns))
     colors=""
 
     for (( i=0; i<$num_colors; i++ ))

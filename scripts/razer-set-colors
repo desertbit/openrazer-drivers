@@ -72,9 +72,9 @@ if [[ ! -e "$DEVICE_PATH/set_key_colors" ]]; then
 fi
 
 
-NUM_COLORS=$(cat "$DEVICE_PATH/get_info" | grep "colors=" | sed 's|colors=||g')
-ROWS=$(cat "$DEVICE_PATH/get_info" | grep "rows=" | sed 's|rows=||g')
-COLUMNS=$(cat "$DEVICE_PATH/get_info" | grep "columns=" | sed 's|columns=||g')
+ROWS=$(cat "$DEVICE_PATH/get_key_rows")
+COLUMNS=$(cat "$DEVICE_PATH/get_key_columns")
+NUM_COLORS=$(($ROWS * $COLUMNS))
 COLORS=""
 CUR_ROW=1
 CUR_COLUMN=1

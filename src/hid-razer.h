@@ -50,7 +50,7 @@
 
 struct razer_data {
     char macro_keys_state;
-    char fn_toggle_state;
+    char fn_mode_state;
 };
 
 #endif // __HID_RAZER_H

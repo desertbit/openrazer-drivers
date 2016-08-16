@@ -150,14 +150,14 @@ int razer_set_logo(struct razer_device *razer_dev, unsigned char state)
 }
 
 // Toggle FN key
-int razer_set_fn_toggle(struct razer_device *razer_dev, unsigned char state)
+int razer_set_fn_mode(struct razer_device *razer_dev, unsigned char state)
 {
     int retval;
     struct razer_data *data     = razer_dev->data;
     struct razer_report report  = razer_new_report(0x02, 0x06, 0x02);
 
     if (state != 0 && state != 1) {
-        printk(KERN_WARNING "hid-razer: fn_toggle: toggle FN state must be either 0 or 1: got: %d\n", state);
+        printk(KERN_WARNING "hid-razer: fn_mode: must be either 0 or 1: got: %d\n", state);
         return -EINVAL;
     }
 
@@ -167,12 +167,12 @@ int razer_set_fn_toggle(struct razer_device *razer_dev, unsigned char state)
 
     retval = razer_send_check_response(razer_dev, &report);
     if (retval != 0) {
-        razer_print_err_report(&report, "hid-razer", "fn_toggle: request failed");
+        razer_print_err_report(&report, "hid-razer", "fn_mode: request failed");
         return retval;
     }
 
-    // Save the new fn toggle state.
-    data->fn_toggle_state = (char)state;
+    // Save the new fn mode state.
+    data->fn_mode_state = (char)state;
 
     return 0;
 }
@@ -582,6 +582,38 @@ static ssize_t razer_attr_read_get_firmware_version(struct device *dev,
 
 
 
+/*
+ * Read device file "get_key_rows"
+ * Returns the amount of key rows.
+ */
+static ssize_t razer_attr_read_get_key_rows(struct device *dev,
+    struct device_attribute *attr, char *buf)
+{
+    struct usb_interface *intf  = to_usb_interface(dev->parent);
+    struct usb_device *usb_dev  = interface_to_usbdev(intf);
+    int rows                    = razer_get_rows(usb_dev);
+
+    return sprintf(buf, "%d\n", rows);
+}
+
+
+
+/*
+ * Read device file "get_key_columns"
+ * Returns the amount of key columns.
+ */
+static ssize_t razer_attr_read_get_key_columns(struct device *dev,
+    struct device_attribute *attr, char *buf)
+{
+    struct usb_interface *intf  = to_usb_interface(dev->parent);
+    struct usb_device *usb_dev  = interface_to_usbdev(intf);
+    int columns                 = razer_get_columns(usb_dev);
+
+    return sprintf(buf, "%d\n", columns);
+}
+
+
+
 /**
  * Read device file "device_type"
  * Returns a friendly device type string.
@@ -675,24 +707,39 @@ static ssize_t razer_attr_write_set_logo(struct device *dev,
 
 
 /*
- * Write device file "set_fn_toggle"
+ * Write device file "fn_mode"
  * Sets the FN mode to the ASCII number written to this file.
  * If 0 the F-keys work as normal F-keys
  * If 1 the F-keys act as if the FN key is held
  */
-static ssize_t razer_attr_write_set_fn_toggle(struct device *dev,
+static ssize_t razer_attr_write_fn_mode(struct device *dev,
     struct device_attribute *attr, const char *buf, size_t count)
 {
     struct razer_device *razer_dev  = dev_get_drvdata(dev);
     int state                       = simple_strtoul(buf, NULL, 10);
     int retval;
 
-    retval = razer_set_fn_toggle(razer_dev, (unsigned char)state);
+    retval = razer_set_fn_mode(razer_dev, (unsigned char)state);
     if (retval != 0) {
         return retval;
     }
 
     return count;
+}
+
+
+
+/*
+ * Read device file "fn_mode"
+ * Returns the current fn mode state.
+ */
+static ssize_t razer_attr_read_fn_mode(struct device *dev,
+    struct device_attribute *attr, char *buf)
+{
+    struct razer_device *razer_dev  = dev_get_drvdata(dev);
+    struct razer_data *data         = razer_dev->data;
+
+    return sprintf(buf, "%d\n", data->fn_mode_state);
 }
 
 
@@ -718,32 +765,6 @@ static ssize_t razer_attr_write_set_key_colors(struct device *dev,
     }
 
     return count;
-}
-
-
-
-/*
- * Read device file "get_info"
- * Return keyboard row information as string.
- */
-static ssize_t razer_attr_read_get_info(struct device *dev,
-    struct device_attribute *attr, char *buf)
-{
-    struct usb_interface *intf  = to_usb_interface(dev->parent);
-    struct usb_device *usb_dev  = interface_to_usbdev(intf);
-    int rows                    = razer_get_rows(usb_dev);
-    int columns                 = razer_get_columns(usb_dev);
-    int colors                  = rows * columns;
-
-    // Check if not supported by this device.
-    if (rows < 0 || columns < 0) {
-        rows = -1;
-        columns = -1;
-        colors = -1;
-    }
-
-    return sprintf(buf, "rows=%d\ncolumns=%d\ncolors=%d\n",
-        rows, columns, colors);
 }
 
 
@@ -978,10 +999,11 @@ static DEVICE_ATTR(get_firmware_version,    0444, razer_attr_read_get_firmware_v
 static DEVICE_ATTR(device_type,             0444, razer_attr_read_device_type,          NULL);
 static DEVICE_ATTR(brightness,              0664, razer_attr_read_brightness, razer_attr_write_brightness);
 
+static DEVICE_ATTR(fn_mode,         0664, razer_attr_read_fn_mode, razer_attr_write_fn_mode);
 static DEVICE_ATTR(set_logo,        0220, NULL, razer_attr_write_set_logo);
-static DEVICE_ATTR(set_fn_toggle,   0220, NULL, razer_attr_write_set_fn_toggle);
 static DEVICE_ATTR(set_key_colors,  0220, NULL, razer_attr_write_set_key_colors);
-static DEVICE_ATTR(get_info,        0444, razer_attr_read_get_info, NULL);
+static DEVICE_ATTR(get_key_rows,    0444, razer_attr_read_get_key_rows, NULL);
+static DEVICE_ATTR(get_key_columns, 0444, razer_attr_read_get_key_columns, NULL);
 
 static DEVICE_ATTR(mode_none,       0220, NULL, razer_attr_write_mode_none);
 static DEVICE_ATTR(mode_static,     0220, NULL, razer_attr_write_mode_static);
@@ -1005,7 +1027,7 @@ int razer_init_data(struct razer_data *data)
 {
     // Set all values to an unset state.
     data->macro_keys_state  = -1;
-    data->fn_toggle_state   = -1;
+    data->fn_mode_state   = -1;
 
     return 0;
 }
@@ -1032,9 +1054,9 @@ int razer_load_states(struct razer_device *razer_dev)
         }
     }
 
-    // Set the FN toggle mode if required.
-    if (data->fn_toggle_state >= 0) {
-        retval = razer_set_fn_toggle(razer_dev, (unsigned char)data->fn_toggle_state);
+    // Set the FN mode if required.
+    if (data->fn_mode_state >= 0) {
+        retval = razer_set_fn_mode(razer_dev, (unsigned char)data->fn_mode_state);
         if (retval != 0) {
             return retval;
         }
@@ -1097,9 +1119,6 @@ static int razer_probe(struct hid_device *hdev,
     retval = device_create_file(dev, &dev_attr_device_type);
     if (retval)
         goto exit_free;
-    retval = device_create_file(dev, &dev_attr_get_info);
-    if (retval)
-        goto exit_free;
     retval = device_create_file(dev, &dev_attr_brightness);
     if (retval)
         goto exit_free;
@@ -1109,13 +1128,19 @@ static int razer_probe(struct hid_device *hdev,
     if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016 ||
             usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_14_2016)
     {
-        // Set the default fn toggle state.
-        data->fn_toggle_state = 1;
+        // Set the default fn mode state.
+        data->fn_mode_state = 1;
 
-        retval = device_create_file(dev, &dev_attr_set_logo);
+        retval = device_create_file(dev, &dev_attr_fn_mode);
         if (retval)
             goto exit_free;
-        retval = device_create_file(dev, &dev_attr_set_fn_toggle);
+        retval = device_create_file(dev, &dev_attr_get_key_rows);
+        if (retval)
+            goto exit_free;
+        retval = device_create_file(dev, &dev_attr_get_key_columns);
+        if (retval)
+            goto exit_free;
+        retval = device_create_file(dev, &dev_attr_set_logo);
         if (retval)
             goto exit_free;
         retval = device_create_file(dev, &dev_attr_set_key_colors);
@@ -1153,6 +1178,12 @@ static int razer_probe(struct hid_device *hdev,
         // Enable the macro keys state.
         data->macro_keys_state = 1;
 
+        retval = device_create_file(dev, &dev_attr_get_key_rows);
+        if (retval)
+            goto exit_free;
+        retval = device_create_file(dev, &dev_attr_get_key_columns);
+        if (retval)
+            goto exit_free;
         retval = device_create_file(dev, &dev_attr_set_key_colors);
         if (retval)
             goto exit_free;
@@ -1223,7 +1254,6 @@ static void razer_disconnect(struct hid_device *hdev)
     device_remove_file(dev, &dev_attr_get_firmware_version);
     device_remove_file(dev, &dev_attr_get_serial);
     device_remove_file(dev, &dev_attr_device_type);
-    device_remove_file(dev, &dev_attr_get_info);
     device_remove_file(dev, &dev_attr_brightness);
 
 
@@ -1231,8 +1261,10 @@ static void razer_disconnect(struct hid_device *hdev)
     if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016 ||
             usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_14_2016)
     {
+        device_remove_file(dev, &dev_attr_fn_mode);
+        device_remove_file(dev, &dev_attr_get_key_rows);
+        device_remove_file(dev, &dev_attr_get_key_columns);
         device_remove_file(dev, &dev_attr_set_logo);
-        device_remove_file(dev, &dev_attr_set_fn_toggle);
         device_remove_file(dev, &dev_attr_set_key_colors);
 
         // Modes
@@ -1247,6 +1279,8 @@ static void razer_disconnect(struct hid_device *hdev)
     }
     else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA)
     {
+        device_remove_file(dev, &dev_attr_get_key_rows);
+        device_remove_file(dev, &dev_attr_get_key_columns);
         device_remove_file(dev, &dev_attr_set_key_colors);
 
         // Modes
