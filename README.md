@@ -19,7 +19,7 @@ All notable changes to this project will be documented in the **[CHANGELOG.md](C
 
 ### Packages
 
-- [ArchLinux AUR Package](https://aur.archlinux.org/packages/razer-drivers-dkms/)
+- [ArchLinux AUR Package](https://aur.archlinux.org/packages/openrazer-drivers-dkms/)
 
 ### Automatic installation with DKMS
 
