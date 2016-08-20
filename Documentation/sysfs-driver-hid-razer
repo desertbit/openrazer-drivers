@@ -1,190 +1,190 @@
-What:			/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/device_type
-Date:			August 2016
-Contact:		Roland Singer <roland.singer@desertbit.com>
+What:		/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/device_type
+Date:		August 2016
+Contact:	Roland Singer <roland.singer@desertbit.com>
 Description:	Returns a friendly device type string.
-				This file is readonly.
-Users:			https://github.com/openrazer
+		This file is readonly.
+Users:		https://github.com/openrazer
 
 
-What:			/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/get_serial
-Date:			August 2016
-Contact:		Roland Singer <roland.singer@desertbit.com>
+What:		/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/get_serial
+Date:		August 2016
+Contact:	Roland Singer <roland.singer@desertbit.com>
 Description:	Returns the serial number from the device as string.
-				This file is readonly.
-Users:			https://github.com/openrazer
+		This file is readonly.
+Users:		https://github.com/openrazer
 
 
-What:			/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/get_firmware_version
-Date:			August 2016
-Contact:		Roland Singer <roland.singer@desertbit.com>
+What:		/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/get_firmware_version
+Date:		August 2016
+Contact:	Roland Singer <roland.singer@desertbit.com>
 Description:	Returns the firmware version from the device as string.
-				This file is readonly.
-Users:			https://github.com/openrazer
+		This file is readonly.
+Users:		https://github.com/openrazer
 
 
-What:			/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/brightness
-Date:			August 2016
-Contact:		Roland Singer <roland.singer@desertbit.com>
+What:		/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/brightness
+Date:		August 2016
+Contact:	Roland Singer <roland.singer@desertbit.com>
 Description:	When read, this file returns the brightness value from 0-255.
-				When written, this file sets the brightness to the ASCII number
-				written to this file. Values from 0-255.
-				This file is optional and exists if the device supports this.
-Users:			https://github.com/openrazer
+		When written, this file sets the brightness to the ASCII number
+		written to this file. Values from 0-255.
+		This file is optional and exists if the device supports this.
+Users:		https://github.com/openrazer
 
 
-What:			/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/fn_mode
-Date:			August 2016
-Contact:		Roland Singer <roland.singer@desertbit.com>
+What:		/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/fn_mode
+Date:		August 2016
+Contact:	Roland Singer <roland.singer@desertbit.com>
 Description:	When read, this file returns the current set FN mode.
-				When written, this file sets the FN mode to the ASCII number
-				written to this file.
+		When written, this file sets the FN mode to the ASCII number
+		written to this file.
 
-				ASCII VALUE   DESCRIPTION
-				0             The F-keys work as normal F-keys
-				1             The F-keys act as if the FN key is held
+		ASCII VALUE   DESCRIPTION
+		0             The F-keys work as normal F-keys
+		1             The F-keys act as if the FN key is held
 
-				This file is optional and exists if the device supports this.
-Users:			https://github.com/openrazer
+		This file is optional and exists if the device supports this.
+Users:		https://github.com/openrazer
 
 
-What:			/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/set_logo
-Date:			August 2016
-Contact:		Roland Singer <roland.singer@desertbit.com>
+What:		/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/set_logo
+Date:		August 2016
+Contact:	Roland Singer <roland.singer@desertbit.com>
 Description:	Sets the logo lighting state to the ASCII number written to this file.
 
-				ASCII VALUE   STATE
-				0             off
-				1             on
+		ASCII VALUE   STATE
+		0             off
+		1             on
 
-				This file is writeonly.
-				This file is optional and exists if the device supports this.
-Users:			https://github.com/openrazer
+		This file is writeonly.
+		This file is optional and exists if the device supports this.
+Users:		https://github.com/openrazer
 
 
-What:			/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/set_key_colors
-Date:			August 2016
-Contact:		Roland Singer <roland.singer@desertbit.com>
+What:		/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/set_key_colors
+Date:		August 2016
+Contact:	Roland Singer <roland.singer@desertbit.com>
 Description:	Set the colors of all keys of the keyboard. 3 bytes per color.
-				This file is writeonly.
-				This file is optional and exists if the device supports this.
+		This file is writeonly.
+		This file is optional and exists if the device supports this.
 Users:			https://github.com/openrazer
 
 
-What:			/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/get_key_rows
-Date:			August 2016
-Contact:		Roland Singer <roland.singer@desertbit.com>
+What:		/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/get_key_rows
+Date:		August 2016
+Contact:	Roland Singer <roland.singer@desertbit.com>
 Description:	Returns the amount of key rows as number.
-				This file is readonly.
-				This file is optional and exists if the device supports this.
-Users:			https://github.com/openrazer
+		This file is readonly.
+		This file is optional and exists if the device supports this.
+Users:		https://github.com/openrazer
 
 
-What:			/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/get_key_columns
-Date:			August 2016
-Contact:		Roland Singer <roland.singer@desertbit.com>
+What:		/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/get_key_columns
+Date:		August 2016
+Contact:	Roland Singer <roland.singer@desertbit.com>
 Description:	Returns the amount of key columns as number.
-				This file is readonly.
-				This file is optional and exists if the device supports this.
-Users:			https://github.com/openrazer
+		This file is readonly.
+		This file is optional and exists if the device supports this.
+Users:		https://github.com/openrazer
 
 
-What:			/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/mode_none
-Date:			August 2016
-Contact:		Roland Singer <roland.singer@desertbit.com>
+What:		/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/mode_none
+Date:		August 2016
+Contact:	Roland Singer <roland.singer@desertbit.com>
 Description:	When written to, disables keyboard effects / turns the keyboard LEDs off.
-				This file is writeonly.
-				This file is optional and exists if the device supports this.
-Users:			https://github.com/openrazer
+		This file is writeonly.
+		This file is optional and exists if the device supports this.
+Users:		https://github.com/openrazer
 
 
-What:			/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/mode_static
-Date:			August 2016
-Contact:		Roland Singer <roland.singer@desertbit.com>
+What:		/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/mode_static
+Date:		August 2016
+Contact:	Roland Singer <roland.singer@desertbit.com>
 Description:	Set the keyboard to static mode when 3 RGB bytes are written.
-				This file is writeonly.
-				This file is optional and exists if the device supports this.
-Users:			https://github.com/openrazer
+		This file is writeonly.
+		This file is optional and exists if the device supports this.
+Users:		https://github.com/openrazer
 
 
-What:			/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/mode_custom
-Date:			August 2016
-Contact:		Roland Singer <roland.singer@desertbit.com>
+What:		/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/mode_custom
+Date:		August 2016
+Contact:	Roland Singer <roland.singer@desertbit.com>
 Description:	Sets the keyboard to custom mode whenever the file is written to.
-				Custom colors previously set with set_key_colors are shown.
-				This file is writeonly.
-				This file is optional and exists if the device supports this.
-Users:			https://github.com/openrazer
+		Custom colors previously set with set_key_colors are shown.
+		This file is writeonly.
+		This file is optional and exists if the device supports this.
+Users:		https://github.com/openrazer
 
 
-What:			/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/mode_wave
-Date:			August 2016
-Contact:		Roland Singer <roland.singer@desertbit.com>
+What:		/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/mode_wave
+Date:		August 2016
+Contact:	Roland Singer <roland.singer@desertbit.com>
 Description:	Sets the keyboard to wave mode.
 
-				ASCII VALUE   DESCRIPTION
-				1             wave effect is displayed moving left across the keyboard.
-				2             wave effect is displayed moving right across the keyboard.
+		ASCII VALUE   DESCRIPTION
+		1             wave effect is displayed moving left across the keyboard.
+		2             wave effect is displayed moving right across the keyboard.
 
-				This file is writeonly.
-				This file is optional and exists if the device supports this.
-Users:			https://github.com/openrazer
+		This file is writeonly.
+		This file is optional and exists if the device supports this.
+Users:		https://github.com/openrazer
 
 
-What:			/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/mode_spectrum
-Date:			August 2016
-Contact:		Roland Singer <roland.singer@desertbit.com>
+What:		/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/mode_spectrum
+Date:		August 2016
+Contact:	Roland Singer <roland.singer@desertbit.com>
 Description:	Sets the keyboard to spectrum mode whenever the file is written to.
-				This file is writeonly.
-				This file is optional and exists if the device supports this.
-Users:			https://github.com/openrazer
+		This file is writeonly.
+		This file is optional and exists if the device supports this.
+Users:		https://github.com/openrazer
 
 
-What:			/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/mode_reactive
-Date:			August 2016
-Contact:		Roland Singer <roland.singer@desertbit.com>
+What:		/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/mode_reactive
+Date:		August 2016
+Contact:	Roland Singer <roland.singer@desertbit.com>
 Description:	Sets the keyboard to reactive mode.
-				A speed byte and 3 RGB bytes should be written.
+		A speed byte and 3 RGB bytes should be written.
 
-				VALUE SPEED
-				1     Short
-				2     Medium
-				3     Long
+		VALUE SPEED
+		1     Short
+		2     Medium
+		3     Long
 
-				This file is writeonly.
-				This file is optional and exists if the device supports this.
-Users:			https://github.com/openrazer
+		This file is writeonly.
+		This file is optional and exists if the device supports this.
+Users:		https://github.com/openrazer
 
 
-What:			/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/mode_starlight
-Date:			August 2016
-Contact:		Roland Singer <roland.singer@desertbit.com>
+What:		/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/mode_starlight
+Date:		August 2016
+Contact:	Roland Singer <roland.singer@desertbit.com>
 Description:	Sets the keyboard to starlight mode.
-				Requires at least one byte representing the effect speed.
+		Requires at least one byte representing the effect speed.
 
-				Mode 1: single color. 3 RGB bytes.
-				Mode 2: two colors. 6 RGB bytes.
-				Mode 3: random colors. Anything else passed.
+		Mode 1: single color. 3 RGB bytes.
+		Mode 2: two colors. 6 RGB bytes.
+		Mode 3: random colors. Anything else passed.
 
-				VALUE SPEED
-				1     Short
-				2     Medium
-				3     Long
+		VALUE SPEED
+		1     Short
+		2     Medium
+		3     Long
 
-				This file is writeonly.
-				This file is optional and exists if the device supports this.
-Users:			https://github.com/openrazer
+		This file is writeonly.
+		This file is optional and exists if the device supports this.
+Users:		https://github.com/openrazer
 
 
-What:			/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/mode_breath
-Date:			August 2016
-Contact:		Roland Singer <roland.singer@desertbit.com>
+What:		/sys/bus/hid/drivers/hid-razer/<hid-bus>:<vendor-id>:<product-id>.<num>/mode_breath
+Date:		August 2016
+Contact:	Roland Singer <roland.singer@desertbit.com>
 Description:	Sets the keyboard to breath mode.
-				Breathing mode has 3 modes of operation.
+		Breathing mode has 3 modes of operation.
 
-				Mode 1 fading in and out using a single color. 3 RGB bytes.
-				Mode 2 is fading in and out between two colors. 6 RGB bytes.
-				Mode 3 is fading in and out between random colors. Anything else passed.
+		Mode 1 fading in and out using a single color. 3 RGB bytes.
+		Mode 2 is fading in and out between two colors. 6 RGB bytes.
+		Mode 3 is fading in and out between random colors. Anything else passed.
 
-				This file is writeonly.
-				This file is optional and exists if the device supports this.
-Users:			https://github.com/openrazer
+		This file is writeonly.
+		This file is optional and exists if the device supports this.
+Users:		https://github.com/openrazer
