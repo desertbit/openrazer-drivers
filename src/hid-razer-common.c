@@ -14,6 +14,7 @@
  * GNU General Public License for more details.
  */
 
+#include <linux/printk.h>
 #include <linux/kernel.h>
 #include <linux/slab.h>
 #include <linux/module.h>
@@ -57,21 +58,20 @@ EXPORT_SYMBOL_GPL(razer_init_device);
 /*
  * Get an initialised razer report
  */
-struct razer_report razer_new_report(unsigned char command_class,
-	unsigned char command_id, unsigned char data_size)
+struct razer_report razer_new_report(void)
 {
 	struct razer_report new_report;
 
 	memset(&new_report, 0, sizeof(struct razer_report));
 
-	new_report.status               = RAZER_STATUS_NEW_COMMAND;
-	new_report.transaction_id       = 0xFF;
-	new_report.remaining_packets    = 0x00;
-	new_report.protocol_type        = 0x00;
-	new_report.reserved             = 0x00;
-	new_report.command_class        = command_class;
-	new_report.command_id           = command_id;
-	new_report.data_size            = data_size;
+	new_report.status             = RAZER_STATUS_NEW_COMMAND;
+	new_report.transaction_id     = 0xFF;
+	new_report.remaining_packets  = 0x00;
+	new_report.protocol_type      = 0x00;
+	new_report.reserved           = 0x00;
+	new_report.command_class      = 0x00;
+	new_report.command_id         = 0x00;
+	new_report.data_size          = 0x00;
 
 	return new_report;
 }
@@ -90,19 +90,18 @@ int _razer_send(struct razer_device *razer_dev, struct razer_report *report)
 	int len;
 
 	buf = kmemdup(report, size, GFP_KERNEL);
-	if (buf == NULL) {
+	if (buf == NULL)
 		return -ENOMEM;
-	}
 
 	len = usb_control_msg(razer_dev->usb_dev,
-			usb_sndctrlpipe(razer_dev->usb_dev, 0),
-			HID_REQ_SET_REPORT,                                 // Request
-			USB_TYPE_CLASS | USB_RECIP_INTERFACE | USB_DIR_OUT, // RequestType
-			0x300,                                              // Value
-			razer_dev->report_index,                            // Index
-			buf,                                                // Data
-			size,                                               // Length
-			USB_CTRL_SET_TIMEOUT);
+		usb_sndctrlpipe(razer_dev->usb_dev, 0),
+		HID_REQ_SET_REPORT,                                 // Request
+		USB_TYPE_CLASS | USB_RECIP_INTERFACE | USB_DIR_OUT, // Type
+		0x300,                                              // Value
+		razer_dev->report_index,                            // Index
+		buf,                                                // Data
+		size,                                               // Length
+		USB_CTRL_SET_TIMEOUT);
 
 	usleep_range(600, 800);
 
@@ -137,14 +136,14 @@ int _razer_receive(struct razer_device *razer_dev, struct razer_report *report)
 	memset(report, 0, size);
 
 	len = usb_control_msg(razer_dev->usb_dev,
-			usb_rcvctrlpipe(razer_dev->usb_dev, 0),
-			HID_REQ_GET_REPORT,                                   // Request
-			USB_TYPE_CLASS | USB_RECIP_INTERFACE | USB_DIR_IN,    // RequestType
-			0x300,                                                // Value
-			razer_dev->report_index,                              // Index
-			report,                                               // Data
-			size,
-			USB_CTRL_SET_TIMEOUT);
+		usb_rcvctrlpipe(razer_dev->usb_dev, 0),
+		HID_REQ_GET_REPORT,                                   // Request
+		USB_TYPE_CLASS | USB_RECIP_INTERFACE | USB_DIR_IN,    // Type
+		0x300,                                                // Value
+		razer_dev->report_index,                              // Index
+		report,                                               // Data
+		size,
+		USB_CTRL_SET_TIMEOUT);
 
 	usleep_range(600, 800);
 
@@ -170,24 +169,23 @@ EXPORT_SYMBOL_GPL(razer_receive);
  * Returns 0 on success.
  */
 int _razer_send_with_response(struct razer_device *razer_dev,
-	struct razer_report *request_report, struct razer_report *response_report)
+	struct razer_report *request_r,
+	struct razer_report *response_r)
 {
 	int retval, r;
 
-	retval = _razer_send(razer_dev, request_report);
-	if (retval != 0) {
+	retval = _razer_send(razer_dev, request_r);
+	if (retval != 0)
 		return retval;
-	}
 
 	// Retry 40 times when busy -> 125 milliseconds -> max 5 seconds wait
 	for (r = 0; r < 40; r++) {
-		retval = _razer_receive(razer_dev, response_report);
-		if (retval != 0) {
+		retval = _razer_receive(razer_dev, response_r);
+		if (retval != 0)
 			return retval;
-		}
 
-		if (response_report->command_class != request_report->command_class ||
-			response_report->command_id != request_report->command_id) {
+		if (response_r->command_class != request_r->command_class ||
+			response_r->command_id != request_r->command_id) {
 			dev_err(&razer_dev->usb_dev->dev,
 					"razer_send_with_response: "
 					"response commands do not match: "
@@ -195,14 +193,14 @@ int _razer_send_with_response(struct razer_device *razer_dev,
 					"Request ID: %d "
 					"Response Class: %d "
 					"Response ID: %d\n",
-					request_report->command_class,
-					request_report->command_id,
-					response_report->command_class,
-					response_report->command_id);
+					request_r->command_class,
+					request_r->command_id,
+					response_r->command_class,
+					response_r->command_id);
 			return -EINVAL;
 		}
 
-		switch (response_report->status) {
+		switch (response_r->status) {
 		case RAZER_STATUS_SUCCESS:
 			return 0;
 
@@ -219,7 +217,7 @@ int _razer_send_with_response(struct razer_device *razer_dev,
 			dev_err(&razer_dev->usb_dev->dev,
 					"razer_send_with_response: "
 					"unknown response status 0x%x\n",
-					response_report->status);
+					response_r->status);
 			return -EINVAL;
 		}
 	}
@@ -231,7 +229,8 @@ int _razer_send_with_response(struct razer_device *razer_dev,
 }
 
 int razer_send_with_response(struct razer_device *razer_dev,
-	struct razer_report *request_report, struct razer_report *response_report)
+	struct razer_report *request_report,
+	struct razer_report *response_report)
 {
 	int retval;
 
@@ -277,9 +276,8 @@ unsigned char razer_calculate_crc(struct razer_report *report)
 	unsigned char *_report = (unsigned char *)report;
 	unsigned int i;
 
-	for (i = 2; i < 88; i++) {
+	for (i = 2; i < 88; i++)
 		crc ^= _report[i];
-	}
 
 	return crc;
 }
@@ -303,9 +301,10 @@ void razer_print_err_report(struct razer_report *report,
 		report->data_size,
 		report->command_class,
 		report->command_id,
-		report->arguments[0], report->arguments[1], report->arguments[2],
-		report->arguments[3], report->arguments[4], report->arguments[5],
-		report->arguments[6], report->arguments[7], report->arguments[8],
-		report->arguments[9]);
+		report->arguments[0], report->arguments[1],
+		report->arguments[2], report->arguments[3],
+		report->arguments[4], report->arguments[5],
+		report->arguments[6], report->arguments[7],
+		report->arguments[8], report->arguments[9]);
 }
 EXPORT_SYMBOL_GPL(razer_print_err_report);

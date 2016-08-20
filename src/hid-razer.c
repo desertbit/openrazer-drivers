@@ -16,6 +16,7 @@
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
+#include <linux/printk.h>
 #include <linux/kernel.h>
 #include <linux/slab.h>
 #include <linux/module.h>
@@ -49,20 +50,28 @@ int razer_get_firmware_version(struct razer_device *razer_dev,
 	unsigned char *fw_string)
 {
 	int retval;
-	struct razer_report response_report;
-	struct razer_report request_report = razer_new_report(0x00, 0x81, 0x00);
-	request_report.crc = razer_calculate_crc(&request_report);
+	struct razer_report response_r;
+	struct razer_report request_r = razer_new_report();
 
-	retval = razer_send_with_response(razer_dev,
-			&request_report, &response_report);
+	request_r.command_class = 0x00;
+	request_r.command_id    = 0x81;
+	request_r.data_size     = 0x00;
+	request_r.crc           = razer_calculate_crc(&request_r);
+
+	retval = razer_send_with_response(razer_dev, &request_r, &response_r);
 	if (retval != 0) {
-		razer_print_err_report(&response_report, "hid-razer",
+		razer_print_err_report(&response_r, KBUILD_MODNAME,
 			"get_firmware_version: request failed");
 		return retval;
 	}
 
-	sprintf(fw_string, "v%d.%d", response_report.arguments[0],
-		response_report.arguments[1]);
+	retval = sprintf(fw_string, "v%d.%d", response_r.arguments[0],
+			response_r.arguments[1]);
+	if (retval <= 0) {
+		pr_warn("get_firmware_version: failed to compose string");
+		return retval;
+	}
+
 	return 0;
 }
 
@@ -71,11 +80,14 @@ int razer_get_brightness(struct razer_device *razer_dev)
 {
 	int retval;
 	struct usb_device *usb_dev = razer_dev->usb_dev;
+	struct razer_report request_report = razer_new_report();
 	struct razer_report response_report;
 	int response_value_index = 1;
 
-	struct razer_report request_report = razer_new_report(0x0E, 0x84, 0x01);
-	request_report.arguments[0] = 0x01;     // LED Class
+	request_report.command_class = 0x0E;
+	request_report.command_id    = 0x84;
+	request_report.data_size     = 0x01;
+	request_report.arguments[0]  = 0x01;     // LED Class
 
 	// Device support.
 	if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
@@ -91,7 +103,7 @@ int razer_get_brightness(struct razer_device *razer_dev)
 	retval = razer_send_with_response(razer_dev,
 			&request_report, &response_report);
 	if (retval != 0) {
-		razer_print_err_report(&response_report, "hid-razer",
+		razer_print_err_report(&response_report, KBUILD_MODNAME,
 			"get_brightness: request failed");
 		return retval;
 	}
@@ -100,14 +112,18 @@ int razer_get_brightness(struct razer_device *razer_dev)
 }
 
 // Set the keyboard brightness.
-int razer_set_brightness(struct razer_device *razer_dev, unsigned char brightness)
+int razer_set_brightness(struct razer_device *razer_dev,
+	unsigned char brightness)
 {
 	int retval;
 	struct usb_device *usb_dev = razer_dev->usb_dev;
+	struct razer_report report = razer_new_report();
 
-	struct razer_report report = razer_new_report(0x0E, 0x04, 0x02);
-	report.arguments[0] = 0x01;
-	report.arguments[1] = brightness;
+	report.command_class = 0x0E;
+	report.command_id    = 0x04;
+	report.data_size     = 0x02;
+	report.arguments[0]  = 0x01;
+	report.arguments[1]  = brightness;
 
 	// Device support.
 	if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
@@ -122,7 +138,7 @@ int razer_set_brightness(struct razer_device *razer_dev, unsigned char brightnes
 
 	retval = razer_send_check_response(razer_dev, &report);
 	if (retval != 0) {
-		razer_print_err_report(&report, "hid-razer",
+		razer_print_err_report(&report, KBUILD_MODNAME,
 			"set_brightness: request failed");
 		return retval;
 	}
@@ -134,7 +150,7 @@ int razer_set_brightness(struct razer_device *razer_dev, unsigned char brightnes
 int razer_set_logo(struct razer_device *razer_dev, unsigned char state)
 {
 	int retval;
-	struct razer_report report = razer_new_report(0x03, 0x00, 0x03);
+	struct razer_report report = razer_new_report();
 
 	if (state != 0 && state != 1) {
 		pr_warn("set_logo: logo lighting state must be either 0 or 1: "
@@ -142,14 +158,17 @@ int razer_set_logo(struct razer_device *razer_dev, unsigned char state)
 		return -EINVAL;
 	}
 
-	report.arguments[0] = 0x01;     // LED Class
-	report.arguments[1] = 0x04;     // LED ID, Logo
-	report.arguments[2] = state;    // State
-	report.crc = razer_calculate_crc(&report);
+	report.command_class = 0x03;
+	report.command_id    = 0x00;
+	report.data_size     = 0x03;
+	report.arguments[0]  = 0x01;     // LED Class
+	report.arguments[1]  = 0x04;     // LED ID, Logo
+	report.arguments[2]  = state;    // State
+	report.crc           = razer_calculate_crc(&report);
 
 	retval = razer_send_check_response(razer_dev, &report);
 	if (retval != 0) {
-		razer_print_err_report(&report, "hid-razer",
+		razer_print_err_report(&report, KBUILD_MODNAME,
 			"set_logo: request failed");
 		return retval;
 	}
@@ -162,20 +181,23 @@ int razer_set_fn_mode(struct razer_device *razer_dev, unsigned char state)
 {
 	int retval;
 	struct razer_data *data     = razer_dev->data;
-	struct razer_report report  = razer_new_report(0x02, 0x06, 0x02);
+	struct razer_report report  = razer_new_report();
 
 	if (state != 0 && state != 1) {
 		pr_warn("fn_mode: must be either 0 or 1: got: %d\n", state);
 		return -EINVAL;
 	}
 
+	report.command_class = 0x02;
+	report.command_id    = 0x06;
+	report.data_size     = 0x02;
 	report.arguments[0] = 0x00;
 	report.arguments[1] = state; // State
 	report.crc = razer_calculate_crc(&report);
 
 	retval = razer_send_check_response(razer_dev, &report);
 	if (retval != 0) {
-		razer_print_err_report(&report, "hid-razer",
+		razer_print_err_report(&report, KBUILD_MODNAME,
 			"fn_mode: request failed");
 		return retval;
 	}
@@ -224,7 +246,7 @@ int razer_set_key_row(struct razer_device *razer_dev,
 	int rows                        = razer_get_rows(razer_dev->usb_dev);
 	int columns                     = razer_get_columns(razer_dev->usb_dev);
 	size_t row_cols_required_len    = columns * 3;
-	struct razer_report report      = razer_new_report(0x03, 0x0B, 0x00); // Set the data_size later.
+	struct razer_report report      = razer_new_report();
 
 	if (rows < 0 || columns < 0) {
 		pr_warn("set_key_row: unsupported device\n");
@@ -242,18 +264,20 @@ int razer_set_key_row(struct razer_device *razer_dev,
 		return -EINVAL;
 	}
 
-	report.data_size = row_cols_required_len + 4;
-	report.transaction_id   = 0x80;         // Set a custom transaction ID.
-	report.arguments[0]     = 0xFF;         // Frame ID
-	report.arguments[1]     = row_index;    // Row
-	report.arguments[2]     = 0x00;         // Start Index
-	report.arguments[3]     = columns - 1;  // End Index (calculated to end of row)
+	report.command_class  = 0x03;
+	report.command_id     = 0x0B;
+	report.data_size      = row_cols_required_len + 4;
+	report.transaction_id = 0x80;         // Set a custom transaction ID.
+	report.arguments[0]   = 0xFF;         // Frame ID
+	report.arguments[1]   = row_index;    // Row
+	report.arguments[2]   = 0x00;         // Start Index
+	report.arguments[3]   = columns - 1;  // End Index (Calc to end of row)
 	memcpy(&report.arguments[4], row_cols, row_cols_required_len);
-	report.crc = razer_calculate_crc(&report);
+	report.crc            = razer_calculate_crc(&report);
 
 	retval = razer_send_check_response(razer_dev, &report);
 	if (retval != 0) {
-		razer_print_err_report(&report, "hid-razer",
+		razer_print_err_report(&report, KBUILD_MODNAME,
 			"set_key_row: request failed");
 		return retval;
 	}
@@ -300,14 +324,18 @@ int razer_set_key_colors(struct razer_device *razer_dev,
 int razer_activate_macro_keys(struct razer_device *razer_dev)
 {
 	int retval;
-	struct razer_report report = razer_new_report(0x00, 0x04, 0x02);
-	report.arguments[0] = 0x02;
-	report.arguments[1] = 0x04;
-	report.crc = razer_calculate_crc(&report);
+	struct razer_report report = razer_new_report();
+
+	report.command_class = 0x00;
+	report.command_id    = 0x04;
+	report.data_size     = 0x02;
+	report.arguments[0]  = 0x02;
+	report.arguments[1]  = 0x04;
+	report.crc           = razer_calculate_crc(&report);
 
 	retval = razer_send_check_response(razer_dev, &report);
 	if (retval != 0) {
-		razer_print_err_report(&report, "hid-razer",
+		razer_print_err_report(&report, KBUILD_MODNAME,
 			"activate_macro_keys: request failed");
 		return retval;
 	}
@@ -319,13 +347,17 @@ int razer_activate_macro_keys(struct razer_device *razer_dev)
 int razer_set_none_mode(struct razer_device *razer_dev)
 {
 	int retval;
-	struct razer_report report = razer_new_report(0x03, 0x0A, 0x01);
-	report.arguments[0] = 0x00; // Effect ID
-	report.crc = razer_calculate_crc(&report);
+	struct razer_report report = razer_new_report();
+
+	report.command_class = 0x03;
+	report.command_id    = 0x0A;
+	report.data_size     = 0x01;
+	report.arguments[0]  = 0x00; // Effect ID
+	report.crc           = razer_calculate_crc(&report);
 
 	retval = razer_send_check_response(razer_dev, &report);
 	if (retval != 0) {
-		razer_print_err_report(&report, "hid-razer",
+		razer_print_err_report(&report, KBUILD_MODNAME,
 			"none_mode: request failed");
 		return retval;
 	}
@@ -338,16 +370,20 @@ int razer_set_static_mode(struct razer_device *razer_dev,
 	struct razer_rgb *color)
 {
 	int retval;
-	struct razer_report report = razer_new_report(0x03, 0x0A, 0x04);
-	report.arguments[0] = 0x06;     // Effect ID
-	report.arguments[1] = color->r;
-	report.arguments[2] = color->g;
-	report.arguments[3] = color->b;
-	report.crc = razer_calculate_crc(&report);
+	struct razer_report report = razer_new_report();
+
+	report.command_class = 0x03;
+	report.command_id    = 0x0A;
+	report.data_size     = 0x04;
+	report.arguments[0]  = 0x06;     // Effect ID
+	report.arguments[1]  = color->r;
+	report.arguments[2]  = color->g;
+	report.arguments[3]  = color->b;
+	report.crc           = razer_calculate_crc(&report);
 
 	retval = razer_send_check_response(razer_dev, &report);
 	if (retval != 0) {
-		razer_print_err_report(&report, "hid-razer",
+		razer_print_err_report(&report, KBUILD_MODNAME,
 			"static_mode: request failed");
 		return retval;
 	}
@@ -359,14 +395,18 @@ int razer_set_static_mode(struct razer_device *razer_dev,
 int razer_set_custom_mode(struct razer_device *razer_dev)
 {
 	int retval;
-	struct razer_report report = razer_new_report(0x03, 0x0A, 0x02);
-	report.arguments[0] = 0x05; // Effect ID
-	report.arguments[1] = 0x00; // Data frame ID
-	report.crc = razer_calculate_crc(&report);
+	struct razer_report report = razer_new_report();
+
+	report.command_class = 0x03;
+	report.command_id    = 0x0A;
+	report.data_size     = 0x02;
+	report.arguments[0]  = 0x05; // Effect ID
+	report.arguments[1]  = 0x00; // Data frame ID
+	report.crc           = razer_calculate_crc(&report);
 
 	retval = razer_send_check_response(razer_dev, &report);
 	if (retval != 0) {
-		razer_print_err_report(&report, "hid-razer",
+		razer_print_err_report(&report, KBUILD_MODNAME,
 			"custom_mode: request failed");
 		return retval;
 	}
@@ -379,7 +419,7 @@ int razer_set_wave_mode(struct razer_device *razer_dev,
 	unsigned char direction)
 {
 	int retval;
-	struct razer_report report = razer_new_report(0x03, 0x0A, 0x02);
+	struct razer_report report = razer_new_report();
 
 	if (direction != 1 && direction != 2) {
 		pr_warn("wave_mode: wave direction must be 1 or 2: got: %d\n",
@@ -387,13 +427,16 @@ int razer_set_wave_mode(struct razer_device *razer_dev,
 		return -EINVAL;
 	}
 
-	report.arguments[0] = 0x01; // Effect ID
-	report.arguments[1] = direction; // Direction
-	report.crc = razer_calculate_crc(&report);
+	report.command_class = 0x03;
+	report.command_id    = 0x0A;
+	report.data_size     = 0x02;
+	report.arguments[0]  = 0x01; // Effect ID
+	report.arguments[1]  = direction; // Direction
+	report.crc           = razer_calculate_crc(&report);
 
 	retval = razer_send_check_response(razer_dev, &report);
 	if (retval != 0) {
-		razer_print_err_report(&report, "hid-razer",
+		razer_print_err_report(&report, KBUILD_MODNAME,
 			"wave_mode: request failed");
 		return retval;
 	}
@@ -405,13 +448,17 @@ int razer_set_wave_mode(struct razer_device *razer_dev,
 int razer_set_spectrum_mode(struct razer_device *razer_dev)
 {
 	int retval;
-	struct razer_report report = razer_new_report(0x03, 0x0A, 0x01);
-	report.arguments[0] = 0x04; // Effect ID
-	report.crc = razer_calculate_crc(&report);
+	struct razer_report report = razer_new_report();
+
+	report.command_class = 0x03;
+	report.command_id    = 0x0A;
+	report.data_size     = 0x01;
+	report.arguments[0]  = 0x04; // Effect ID
+	report.crc           = razer_calculate_crc(&report);
 
 	retval = razer_send_check_response(razer_dev, &report);
 	if (retval != 0) {
-		razer_print_err_report(&report, "hid-razer",
+		razer_print_err_report(&report, KBUILD_MODNAME,
 			"spectrum_mode: request failed");
 		return retval;
 	}
@@ -424,7 +471,7 @@ int razer_set_reactive_mode(struct razer_device *razer_dev,
 	unsigned char speed, struct razer_rgb *color)
 {
 	int retval = 0;
-	struct razer_report report = razer_new_report(0x03, 0x0A, 0x05);
+	struct razer_report report = razer_new_report();
 
 	if (speed <= 0 || speed >= 4) {
 		pr_warn("reactive_mode: speed must be within 1-3: got: %d\n",
@@ -432,16 +479,19 @@ int razer_set_reactive_mode(struct razer_device *razer_dev,
 		return -EINVAL;
 	}
 
-	report.arguments[0] = 0x02;     // Effect ID
-	report.arguments[1] = speed;    // Speed
-	report.arguments[2] = color->r;
-	report.arguments[3] = color->g;
-	report.arguments[4] = color->b;
-	report.crc = razer_calculate_crc(&report);
+	report.command_class = 0x03;
+	report.command_id    = 0x0A;
+	report.data_size     = 0x05;
+	report.arguments[0]  = 0x02;     // Effect ID
+	report.arguments[1]  = speed;    // Speed
+	report.arguments[2]  = color->r;
+	report.arguments[3]  = color->g;
+	report.arguments[4]  = color->b;
+	report.crc           = razer_calculate_crc(&report);
 
 	retval = razer_send_check_response(razer_dev, &report);
 	if (retval != 0) {
-		razer_print_err_report(&report, "hid-razer",
+		razer_print_err_report(&report, KBUILD_MODNAME,
 			"reactive_mode: request failed");
 		return retval;
 	}
@@ -458,7 +508,7 @@ int razer_set_starlight_mode(struct razer_device *razer_dev,
 	unsigned char speed, struct razer_rgb *color1, struct razer_rgb *color2)
 {
 	int retval;
-	struct razer_report report = razer_new_report(0x03, 0x0A, 0x00); // Data size initial to 0
+	struct razer_report report = razer_new_report();
 
 	if (speed <= 0 || speed >= 4) {
 		pr_warn("starlight_mode: speed must be within 1-3: got: %d\n",
@@ -466,8 +516,10 @@ int razer_set_starlight_mode(struct razer_device *razer_dev,
 		return -EINVAL;
 	}
 
-	report.arguments[0] = 0x19;     // Effect ID
-	report.arguments[2] = speed;    // Speed
+	report.command_class = 0x03;
+	report.command_id    = 0x0A;
+	report.arguments[0]  = 0x19;     // Effect ID
+	report.arguments[2]  = speed;    // Speed
 
 	if (color1 == NULL && color2 == NULL) {
 		report.arguments[1] = 0x03;         // Starlight effect type: random colors
@@ -496,7 +548,7 @@ int razer_set_starlight_mode(struct razer_device *razer_dev,
 
 	retval = razer_send_check_response(razer_dev, &report);
 	if (retval != 0) {
-		razer_print_err_report(&report, "hid-razer",
+		razer_print_err_report(&report, KBUILD_MODNAME,
 			"starlight_mode: request failed");
 		return retval;
 	}
@@ -513,8 +565,11 @@ int razer_set_breath_mode(struct razer_device *razer_dev,
 	struct razer_rgb *color1, struct razer_rgb *color2)
 {
 	int retval;
-	struct razer_report report = razer_new_report(0x03, 0x0A, 0x00); // Data size initial to 0
-	report.arguments[0] = 0x03; // Effect ID
+	struct razer_report report = razer_new_report();
+
+	report.command_class = 0x03;
+	report.command_id    = 0x0A;
+	report.arguments[0]  = 0x03; // Effect ID
 
 	if (color1 == NULL && color2 == NULL) {
 		report.arguments[1] = 0x03;         // Breath effect type: random colors
@@ -543,7 +598,7 @@ int razer_set_breath_mode(struct razer_device *razer_dev,
 
 	retval = razer_send_check_response(razer_dev, &report);
 	if (retval != 0) {
-		razer_print_err_report(&report, "hid-razer",
+		razer_print_err_report(&report, KBUILD_MODNAME,
 			"breath_mode: request failed");
 		return retval;
 	}
