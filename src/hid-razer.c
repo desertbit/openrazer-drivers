@@ -648,20 +648,20 @@ static ssize_t razer_attr_read_device_type(struct device *dev,
 	char *device_type;
 
 	switch (usb_dev->descriptor.idProduct) {
-		case USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016:
-			device_type = "Razer Blade Stealth 2016\n";
-			break;
+	case USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016:
+		device_type = "Razer Blade Stealth 2016\n";
+		break;
 
-		case USB_DEVICE_ID_RAZER_BLADE_14_2016:
-			device_type = "Razer Blade 14 2016\n";
-			break;
+	case USB_DEVICE_ID_RAZER_BLADE_14_2016:
+		device_type = "Razer Blade 14 2016\n";
+		break;
 
-		case USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA:
-			device_type = "Razer BlackWidow Chroma\n";
-			break;
+	case USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA:
+		device_type = "Razer BlackWidow Chroma\n";
+		break;
 
-		default:
-			device_type = "Unknown Device\n";
+	default:
+		device_type = "Unknown Device\n";
 	}
 
 	return sprintf(buf, device_type);
@@ -693,8 +693,15 @@ static ssize_t razer_attr_write_brightness(struct device *dev,
 	struct device_attribute *attr, const char *buf, size_t count)
 {
 	struct razer_device *razer_dev  = dev_get_drvdata(dev);
-	int temp                        = simple_strtoul(buf, NULL, 10);
+	unsigned long temp;
 	int retval;
+
+	retval = kstrtoul(buf, 10, &temp);
+	if (retval != 0) {
+		printk(KERN_WARNING "hid-razer: set brightness "
+			"requires an ASCII number\n");
+		return retval;
+	}
 
 	retval = razer_set_brightness(razer_dev, (unsigned char)temp);
 	if (retval != 0) {
@@ -716,10 +723,17 @@ static ssize_t razer_attr_write_set_logo(struct device *dev,
 	struct device_attribute *attr, const char *buf, size_t count)
 {
 	struct razer_device *razer_dev  = dev_get_drvdata(dev);
-	int state                       = simple_strtoul(buf, NULL, 10);
+	unsigned long temp;
 	int retval;
 
-	retval = razer_set_logo(razer_dev, (unsigned char)state);
+	retval = kstrtoul(buf, 10, &temp);
+	if (retval != 0) {
+		printk(KERN_WARNING "hid-razer: set_logo: "
+			"requires an ASCII number\n");
+		return retval;
+	}
+
+	retval = razer_set_logo(razer_dev, (unsigned char)temp);
 	if (retval != 0) {
 		return retval;
 	}
@@ -739,10 +753,17 @@ static ssize_t razer_attr_write_fn_mode(struct device *dev,
 	struct device_attribute *attr, const char *buf, size_t count)
 {
 	struct razer_device *razer_dev  = dev_get_drvdata(dev);
-	int state                       = simple_strtoul(buf, NULL, 10);
+	unsigned long temp;
 	int retval;
 
-	retval = razer_set_fn_mode(razer_dev, (unsigned char)state);
+	retval = kstrtoul(buf, 10, &temp);
+	if (retval != 0) {
+		printk(KERN_WARNING "hid-razer: set fn_mode "
+			"requires an ASCII number\n");
+		return retval;
+	}
+
+	retval = razer_set_fn_mode(razer_dev, (unsigned char)temp);
 	if (retval != 0) {
 		return retval;
 	}
@@ -868,8 +889,15 @@ static ssize_t razer_attr_write_mode_wave(struct device *dev,
 	struct device_attribute *attr, const char *buf, size_t count)
 {
 	struct razer_device *razer_dev  = dev_get_drvdata(dev);
-	int temp                        = simple_strtoul(buf, NULL, 10);
+	unsigned long temp;
 	int retval;
+
+	retval = kstrtoul(buf, 10, &temp);
+	if (retval != 0) {
+		printk(KERN_WARNING "hid-razer: mode_wave: "
+			"requires an ASCII number\n");
+		return retval;
+	}
 
 	retval = razer_set_wave_mode(razer_dev, temp);
 	if (retval != 0) {
