@@ -316,7 +316,7 @@ int razer_set_key_colors(struct razer_device *razer_dev,
 	for (i = 0; i < rows; i++) {
 		retval =
 		razer_set_key_row(razer_dev, i,
-				  (unsigned char *)&row_cols[i*columns*3],
+				  (unsigned char *)&row_cols[i * columns * 3],
 				   columns * 3);
 		if (retval != 0) {
 			pr_warn("set_key_colors: failed to set colors for row: "
@@ -425,7 +425,7 @@ int razer_set_custom_mode(struct razer_device *razer_dev)
 
 // Set the wave effect on the keyboard
 int razer_set_wave_mode(struct razer_device *razer_dev,
-	unsigned char direction)
+			unsigned char direction)
 {
 	int retval;
 	struct razer_report report = razer_new_report();
@@ -477,7 +477,7 @@ int razer_set_spectrum_mode(struct razer_device *razer_dev)
 
 // Set reactive effect on the keyboard
 int razer_set_reactive_mode(struct razer_device *razer_dev,
-	unsigned char speed, struct razer_rgb *color)
+			    unsigned char speed, struct razer_rgb *color)
 {
 	int retval = 0;
 	struct razer_report report = razer_new_report();
@@ -565,7 +565,6 @@ int razer_set_starlight_mode(struct razer_device *razer_dev,
 
 	return 0;
 }
-
 
 // Set breath effect on the keyboard.
 // 1. Random color mode: set both colors to NULL
@@ -833,7 +832,8 @@ static ssize_t razer_attr_read_fn_mode(struct device *dev,
  * Set the colors of all keys of the keyboard. 3 bytes per color.
  */
 static ssize_t razer_attr_write_set_key_colors(struct device *dev,
-	struct device_attribute *attr, const char *buf, size_t count)
+					       struct device_attribute *attr,
+					       const char *buf, size_t count)
 {
 	struct razer_device *razer_dev = dev_get_drvdata(dev);
 	int retval;
@@ -1191,7 +1191,7 @@ static int razer_probe(struct hid_device *hdev,
 	// Custom files depending on the device support.
 	// #############################################
 	if (product_id == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016 ||
-		product_id == USB_DEVICE_ID_RAZER_BLADE_14_2016) {
+	    product_id == USB_DEVICE_ID_RAZER_BLADE_14_2016) {
 		// Set the default fn mode state.
 		data->fn_mode_state = 1;
 
@@ -1320,7 +1320,7 @@ static void razer_disconnect(struct hid_device *hdev)
 	// Custom files depending on the device support.
 	// #############################################
 	if (product_id == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016 ||
-		product_id == USB_DEVICE_ID_RAZER_BLADE_14_2016) {
+	    product_id == USB_DEVICE_ID_RAZER_BLADE_14_2016) {
 		device_remove_file(dev, &dev_attr_fn_mode);
 		device_remove_file(dev, &dev_attr_get_key_rows);
 		device_remove_file(dev, &dev_attr_get_key_columns);

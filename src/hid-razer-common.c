@@ -177,7 +177,7 @@ int _razer_send_with_response(struct razer_device *razer_dev,
 			return retval;
 
 		if (response_r->command_class != request_r->command_class ||
-			response_r->command_id != request_r->command_id) {
+		    response_r->command_id != request_r->command_id) {
 			dev_err(&razer_dev->usb_dev->dev,
 				"razer_send_with_response: "
 				"response commands do not match: "

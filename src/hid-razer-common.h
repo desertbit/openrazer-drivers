@@ -35,7 +35,7 @@ enum razer_status {
 
 struct razer_device {
 	struct usb_device *usb_dev;
-	struct mutex      lock;
+	struct mutex      lock;          // Synchronize usb access.
 	uint              report_index;  // The report index to use.
 	void              *data;         // Optional custom data.
 };
