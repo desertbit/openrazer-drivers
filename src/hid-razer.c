@@ -214,15 +214,17 @@ int razer_set_fn_mode(struct razer_device *razer_dev, unsigned char state)
 // On error a value smaller than 0 is returned.
 int razer_get_rows(struct usb_device *usb_dev)
 {
-	const unsigned int productID = usb_dev->descriptor.idProduct;
-
-	if (productID == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016) {
+	switch (usb_dev->descriptor.idProduct) {
+	case USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016:
 		return RAZER_STEALTH_2016_ROWS;
-	} else if (productID == USB_DEVICE_ID_RAZER_BLADE_14_2016) {
+
+	case USB_DEVICE_ID_RAZER_BLADE_14_2016:
 		return RAZER_BLADE_14_2016_ROWS;
-	} else if (productID == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
+
+	case USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA:
 		return RAZER_BLACKWIDOW_CHROMA_ROWS;
-	} else {
+
+	default:
 		return -EINVAL;
 	}
 }
@@ -231,15 +233,17 @@ int razer_get_rows(struct usb_device *usb_dev)
 // On error a value smaller than 0 is returned.
 int razer_get_columns(struct usb_device *usb_dev)
 {
-	const unsigned int productID = usb_dev->descriptor.idProduct;
-
-	if (productID == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016) {
+	switch (usb_dev->descriptor.idProduct) {
+	case USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016:
 		return RAZER_STEALTH_2016_COLUMNS;
-	} else if (productID == USB_DEVICE_ID_RAZER_BLADE_14_2016) {
+
+	case USB_DEVICE_ID_RAZER_BLADE_14_2016:
 		return RAZER_BLADE_14_2016_COLUMNS;
-	} else if (productID == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
+
+	case USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA:
 		return RAZER_BLACKWIDOW_CHROMA_COLUMNS;
-	} else {
+
+	default:
 		return -EINVAL;
 	}
 }
@@ -650,9 +654,8 @@ static ssize_t razer_attr_read_get_firmware_version(struct device *dev,
 	int retval;
 
 	retval = razer_get_firmware_version(razer_dev, &fw_string[0]);
-	if (retval != 0) {
+	if (retval != 0)
 		return retval;
-	}
 
 	return sprintf(buf, "%s\n", &fw_string[0]);
 }
@@ -759,9 +762,8 @@ static ssize_t razer_attr_write_brightness(struct device *dev,
 	}
 
 	retval = razer_set_brightness(razer_dev, (unsigned char)temp);
-	if (retval != 0) {
+	if (retval != 0)
 		return retval;
-	}
 
 	return count;
 }
@@ -788,9 +790,8 @@ static ssize_t razer_attr_write_set_logo(struct device *dev,
 	}
 
 	retval = razer_set_logo(razer_dev, (unsigned char)temp);
-	if (retval != 0) {
+	if (retval != 0)
 		return retval;
-	}
 
 	return count;
 }
@@ -817,9 +818,8 @@ static ssize_t razer_attr_write_fn_mode(struct device *dev,
 	}
 
 	retval = razer_set_fn_mode(razer_dev, (unsigned char)temp);
-	if (retval != 0) {
+	if (retval != 0)
 		return retval;
-	}
 
 	return count;
 }
@@ -858,9 +858,8 @@ static ssize_t razer_attr_write_set_key_colors(struct device *dev,
 	}
 
 	retval = razer_set_custom_mode(razer_dev);
-	if (retval != 0) {
+	if (retval != 0)
 		return retval;
-	}
 
 	return count;
 }
@@ -878,9 +877,8 @@ static ssize_t razer_attr_write_mode_none(struct device *dev,
 	int retval;
 
 	retval = razer_set_none_mode(razer_dev);
-	if (retval != 0) {
+	if (retval != 0)
 		return retval;
-	}
 
 	return count;
 }
@@ -903,9 +901,8 @@ static ssize_t razer_attr_write_mode_static(struct device *dev,
 	}
 
 	retval = razer_set_static_mode(razer_dev, (struct razer_rgb *)&buf[0]);
-	if (retval != 0) {
+	if (retval != 0)
 		return retval;
-	}
 
 	return count;
 }
@@ -923,9 +920,8 @@ static ssize_t razer_attr_write_mode_custom(struct device *dev,
 	int retval;
 
 	retval = razer_set_custom_mode(razer_dev);
-	if (retval != 0) {
+	if (retval != 0)
 		return retval;
-	}
 
 	return count;
 }
@@ -952,9 +948,8 @@ static ssize_t razer_attr_write_mode_wave(struct device *dev,
 	}
 
 	retval = razer_set_wave_mode(razer_dev, temp);
-	if (retval != 0) {
+	if (retval != 0)
 		return retval;
-	}
 
 	return count;
 }
@@ -972,9 +967,8 @@ static ssize_t razer_attr_write_mode_spectrum(struct device *dev,
 	int retval;
 
 	retval = razer_set_spectrum_mode(razer_dev);
-	if (retval != 0) {
+	if (retval != 0)
 		return retval;
-	}
 
 	return count;
 }
@@ -1002,9 +996,8 @@ static ssize_t razer_attr_write_mode_reactive(struct device *dev,
 	retval = razer_set_reactive_mode(razer_dev,
 				(unsigned char)buf[0],
 				(struct razer_rgb *)&buf[1]);
-	if (retval != 0) {
+	if (retval != 0)
 		return retval;
-	}
 
 	return count;
 }
@@ -1046,9 +1039,8 @@ static ssize_t razer_attr_write_mode_starlight(struct device *dev,
 
 	retval = razer_set_starlight_mode(razer_dev, (unsigned char)buf[0],
 				color1, color2);
-	if (retval != 0) {
+	if (retval != 0)
 		return retval;
-	}
 
 	return count;
 }
@@ -1080,9 +1072,8 @@ static ssize_t razer_attr_write_mode_breath(struct device *dev,
 	}
 
 	retval = razer_set_breath_mode(razer_dev, color1, color2);
-	if (retval != 0) {
+	if (retval != 0)
 		return retval;
-	}
 
 	return count;
 }
@@ -1147,25 +1138,22 @@ int razer_load_states(struct razer_device *razer_dev)
 	int retval;
 	struct razer_data *data = razer_dev->data;
 
-	if (!data) {
+	if (!data)
 		return 0;
-	}
 
 	// Enable the macro keys if required.
 	if (data->macro_keys_state == 1) {
 		retval = razer_activate_macro_keys(razer_dev);
-		if (retval != 0) {
+		if (retval != 0)
 			return retval;
-		}
 	}
 
 	// Set the FN mode if required.
 	if (data->fn_mode_state >= 0) {
 		retval = razer_set_fn_mode(razer_dev,
 				(unsigned char)data->fn_mode_state);
-		if (retval != 0) {
+		if (retval != 0)
 			return retval;
-		}
 	}
 
 	return 0;
