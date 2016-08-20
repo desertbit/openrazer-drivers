@@ -22,6 +22,7 @@
 #include <linux/hid.h>
 #include <linux/dmi.h>
 
+#include "hid-ids.h"
 #include "hid-razer-common.h"
 #include "hid-razer.h"
 
@@ -42,393 +43,420 @@ MODULE_VERSION("1.0.0");
 //########################//
 
 // Get the firmware version.
-int razer_get_firmware_version(struct razer_device *razer_dev, unsigned char* fw_string)
+int razer_get_firmware_version(struct razer_device *razer_dev,
+	unsigned char *fw_string)
 {
-    int retval;
-    struct razer_report response_report;
-    struct razer_report request_report = razer_new_report(0x00, 0x81, 0x00);
-    request_report.crc = razer_calculate_crc(&request_report);
+	int retval;
+	struct razer_report response_report;
+	struct razer_report request_report = razer_new_report(0x00, 0x81, 0x00);
+	request_report.crc = razer_calculate_crc(&request_report);
 
-    retval = razer_send_with_response(razer_dev, &request_report, &response_report);
-    if (retval != 0) {
-        razer_print_err_report(&response_report, "hid-razer", "get_firmware_version: request failed");
-        return retval;
-    }
+	retval = razer_send_with_response(razer_dev,
+			&request_report, &response_report);
+	if (retval != 0) {
+		razer_print_err_report(&response_report, "hid-razer",
+			"get_firmware_version: request failed");
+		return retval;
+	}
 
-    sprintf(fw_string, "v%d.%d", response_report.arguments[0], response_report.arguments[1]);
-    return 0;
+	sprintf(fw_string, "v%d.%d", response_report.arguments[0],
+		response_report.arguments[1]);
+	return 0;
 }
 
 // Get brightness of the keyboard.
 int razer_get_brightness(struct razer_device *razer_dev)
 {
-    int retval;
-    struct usb_device *usb_dev = razer_dev->usb_dev;
-    struct razer_report response_report;
-    int response_value_index = 1;
+	int retval;
+	struct usb_device *usb_dev = razer_dev->usb_dev;
+	struct razer_report response_report;
+	int response_value_index = 1;
 
-    struct razer_report request_report = razer_new_report(0x0E, 0x84, 0x01);
-    request_report.arguments[0] = 0x01;     // LED Class
+	struct razer_report request_report = razer_new_report(0x0E, 0x84, 0x01);
+	request_report.arguments[0] = 0x01;     // LED Class
 
-    // Device support.
-    if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
-        request_report.command_class    = 0x03;
-        request_report.command_id       = 0x83;
-        request_report.arguments[1]     = 0x05;     // Backlight LED
-        request_report.data_size        = 0x02;
-        response_value_index            = 2;
-    }
+	// Device support.
+	if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
+		request_report.command_class    = 0x03;
+		request_report.command_id       = 0x83;
+		request_report.arguments[1]     = 0x05;     // Backlight LED
+		request_report.data_size        = 0x02;
+		response_value_index            = 2;
+	}
 
-    request_report.crc = razer_calculate_crc(&request_report);
+	request_report.crc = razer_calculate_crc(&request_report);
 
-    retval = razer_send_with_response(razer_dev, &request_report, &response_report);
-    if (retval != 0) {
-        razer_print_err_report(&response_report, "hid-razer", "get_brightness: request failed");
-        return retval;
-    }
+	retval = razer_send_with_response(razer_dev,
+			&request_report, &response_report);
+	if (retval != 0) {
+		razer_print_err_report(&response_report, "hid-razer",
+			"get_brightness: request failed");
+		return retval;
+	}
 
-    return response_report.arguments[response_value_index];
+	return response_report.arguments[response_value_index];
 }
 
 // Set the keyboard brightness.
 int razer_set_brightness(struct razer_device *razer_dev, unsigned char brightness)
 {
-    int retval;
-    struct usb_device *usb_dev = razer_dev->usb_dev;
+	int retval;
+	struct usb_device *usb_dev = razer_dev->usb_dev;
 
-    struct razer_report report = razer_new_report(0x0E, 0x04, 0x02);
-    report.arguments[0] = 0x01;
-    report.arguments[1] = brightness;
+	struct razer_report report = razer_new_report(0x0E, 0x04, 0x02);
+	report.arguments[0] = 0x01;
+	report.arguments[1] = brightness;
 
-    // Device support.
-    if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
-        report.command_class    = 0x03;
-        report.command_id       = 0x03;
-        report.arguments[1]     = 0x05;     // Backlight LED
-        report.arguments[2]     = brightness;
-        report.data_size        = 0x03;
-    }
+	// Device support.
+	if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
+		report.command_class    = 0x03;
+		report.command_id       = 0x03;
+		report.arguments[1]     = 0x05;     // Backlight LED
+		report.arguments[2]     = brightness;
+		report.data_size        = 0x03;
+	}
 
-    report.crc = razer_calculate_crc(&report);
+	report.crc = razer_calculate_crc(&report);
 
-    retval = razer_send_check_response(razer_dev, &report);
-    if (retval != 0) {
-        razer_print_err_report(&report, "hid-razer", "set_brightness: request failed");
-        return retval;
-    }
+	retval = razer_send_check_response(razer_dev, &report);
+	if (retval != 0) {
+		razer_print_err_report(&report, "hid-razer",
+			"set_brightness: request failed");
+		return retval;
+	}
 
-    return 0;
+	return 0;
 }
 
 // Set the logo lighting state (on/off only)
 int razer_set_logo(struct razer_device *razer_dev, unsigned char state)
 {
-    int retval;
-    struct razer_report report = razer_new_report(0x03, 0x00, 0x03);
+	int retval;
+	struct razer_report report = razer_new_report(0x03, 0x00, 0x03);
 
-    if (state != 0 && state != 1) {
-        printk(KERN_WARNING "hid-razer: set_logo: logo lighting state must be either 0 or 1: got: %d\n", state);
-        return -EINVAL;
-    }
+	if (state != 0 && state != 1) {
+		printk(KERN_WARNING "hid-razer: set_logo: logo lighting state "
+			"must be either 0 or 1: got: %d\n", state);
+		return -EINVAL;
+	}
 
-    report.arguments[0] = 0x01;     // LED Class
-    report.arguments[1] = 0x04;     // LED ID, Logo
-    report.arguments[2] = state;    // State
-    report.crc = razer_calculate_crc(&report);
+	report.arguments[0] = 0x01;     // LED Class
+	report.arguments[1] = 0x04;     // LED ID, Logo
+	report.arguments[2] = state;    // State
+	report.crc = razer_calculate_crc(&report);
 
-    retval = razer_send_check_response(razer_dev, &report);
-    if (retval != 0) {
-        razer_print_err_report(&report, "hid-razer", "set_logo: request failed");
-        return retval;
-    }
+	retval = razer_send_check_response(razer_dev, &report);
+	if (retval != 0) {
+		razer_print_err_report(&report, "hid-razer",
+			"set_logo: request failed");
+		return retval;
+	}
 
-    return 0;
+	return 0;
 }
 
 // Toggle FN key
 int razer_set_fn_mode(struct razer_device *razer_dev, unsigned char state)
 {
-    int retval;
-    struct razer_data *data     = razer_dev->data;
-    struct razer_report report  = razer_new_report(0x02, 0x06, 0x02);
+	int retval;
+	struct razer_data *data     = razer_dev->data;
+	struct razer_report report  = razer_new_report(0x02, 0x06, 0x02);
 
-    if (state != 0 && state != 1) {
-        printk(KERN_WARNING "hid-razer: fn_mode: must be either 0 or 1: got: %d\n", state);
-        return -EINVAL;
-    }
+	if (state != 0 && state != 1) {
+		printk(KERN_WARNING "hid-razer: fn_mode: must be "
+			"either 0 or 1: got: %d\n", state);
+		return -EINVAL;
+	}
 
-    report.arguments[0] = 0x00;
-    report.arguments[1] = state; // State
-    report.crc = razer_calculate_crc(&report);
+	report.arguments[0] = 0x00;
+	report.arguments[1] = state; // State
+	report.crc = razer_calculate_crc(&report);
 
-    retval = razer_send_check_response(razer_dev, &report);
-    if (retval != 0) {
-        razer_print_err_report(&report, "hid-razer", "fn_mode: request failed");
-        return retval;
-    }
+	retval = razer_send_check_response(razer_dev, &report);
+	if (retval != 0) {
+		razer_print_err_report(&report, "hid-razer",
+			"fn_mode: request failed");
+		return retval;
+	}
 
-    // Save the new fn mode state.
-    data->fn_mode_state = (char)state;
+	// Save the new fn mode state.
+	data->fn_mode_state = (char)state;
 
-    return 0;
+	return 0;
 }
 
 // Returns the row count of the keyboard.
 // On error a value smaller than 0 is returned.
 int razer_get_rows(struct usb_device *usb_dev)
 {
-    if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016) {
-        return RAZER_STEALTH_2016_ROWS;
-    }
-    else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_14_2016) {
-        return RAZER_BLADE_14_2016_ROWS;
-    }
-    else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
-        return RAZER_BLACKWIDOW_CHROMA_ROWS;
-    }
-    else {
-        return -EINVAL;
-    }
+	if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016) {
+		return RAZER_STEALTH_2016_ROWS;
+	}
+	else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_14_2016) {
+		return RAZER_BLADE_14_2016_ROWS;
+	}
+	else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
+		return RAZER_BLACKWIDOW_CHROMA_ROWS;
+	}
+	else {
+		return -EINVAL;
+	}
 }
 
 // Returns the column count of the keyboard.
 // On error a value smaller than 0 is returned.
 int razer_get_columns(struct usb_device *usb_dev)
 {
-    if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016) {
-        return RAZER_STEALTH_2016_COLUMNS;
-    }
-    else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_14_2016) {
-        return RAZER_BLADE_14_2016_COLUMNS;
-    }
-    else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
-        return RAZER_BLACKWIDOW_CHROMA_COLUMNS;
-    }
-    else {
-        return -EINVAL;
-    }
+	if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016) {
+		return RAZER_STEALTH_2016_COLUMNS;
+	}
+	else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_14_2016) {
+		return RAZER_BLADE_14_2016_COLUMNS;
+	}
+	else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
+		return RAZER_BLACKWIDOW_CHROMA_COLUMNS;
+	}
+	else {
+		return -EINVAL;
+	}
 }
 
 // Set the key colors for a specific row. Takes in an array of RGB bytes.
 int razer_set_key_row(struct razer_device *razer_dev,
-    unsigned char row_index, unsigned char *row_cols, size_t row_cols_len)
+	unsigned char row_index, unsigned char *row_cols, size_t row_cols_len)
 {
-    int retval;
-    int rows                        = razer_get_rows(razer_dev->usb_dev);
-    int columns                     = razer_get_columns(razer_dev->usb_dev);
-    size_t row_cols_required_len    = columns * 3;
-    struct razer_report report      = razer_new_report(0x03, 0x0B, 0x00); // Set the data_size later.
+	int retval;
+	int rows                        = razer_get_rows(razer_dev->usb_dev);
+	int columns                     = razer_get_columns(razer_dev->usb_dev);
+	size_t row_cols_required_len    = columns * 3;
+	struct razer_report report      = razer_new_report(0x03, 0x0B, 0x00); // Set the data_size later.
 
-    if (rows < 0 || columns < 0) {
-        printk(KERN_WARNING "hid-razer: set_key_row: unsupported device\n");
-        return -EINVAL;
-    }
+	if (rows < 0 || columns < 0) {
+		printk(KERN_WARNING "hid-razer: set_key_row: "
+			"unsupported device\n");
+		return -EINVAL;
+	}
 
-    // Validate the input.
-    if (row_index >= rows) {
-        printk(KERN_WARNING "hid-razer: set_key_row: invalid row index: %d\n", row_index);
-        return -EINVAL;
-    }
-    if (row_cols_len != row_cols_required_len) {
-        printk(KERN_WARNING "hid-razer: set_key_row: wrong amount of RGB data provided: %lu of %lu\n",
-            row_cols_len, row_cols_required_len);
-        return -EINVAL;
-    }
+	// Validate the input.
+	if (row_index >= rows) {
+		printk(KERN_WARNING "hid-razer: set_key_row: "
+			"invalid row index: %d\n", row_index);
+		return -EINVAL;
+	}
+	if (row_cols_len != row_cols_required_len) {
+		printk(KERN_WARNING "hid-razer: set_key_row: "
+			"wrong amount of RGB data provided: %lu of %lu\n",
+			row_cols_len, row_cols_required_len);
+		return -EINVAL;
+	}
 
-    report.data_size = row_cols_required_len + 4;
-    report.transaction_id   = 0x80;         // Set a custom transaction ID.
-    report.arguments[0]     = 0xFF;         // Frame ID
-    report.arguments[1]     = row_index;    // Row
-    report.arguments[2]     = 0x00;         // Start Index
-    report.arguments[3]     = columns - 1;  // End Index (calculated to end of row)
-    memcpy(&report.arguments[4], row_cols, row_cols_required_len);
-    report.crc = razer_calculate_crc(&report);
+	report.data_size = row_cols_required_len + 4;
+	report.transaction_id   = 0x80;         // Set a custom transaction ID.
+	report.arguments[0]     = 0xFF;         // Frame ID
+	report.arguments[1]     = row_index;    // Row
+	report.arguments[2]     = 0x00;         // Start Index
+	report.arguments[3]     = columns - 1;  // End Index (calculated to end of row)
+	memcpy(&report.arguments[4], row_cols, row_cols_required_len);
+	report.crc = razer_calculate_crc(&report);
 
-    retval = razer_send_check_response(razer_dev, &report);
-    if (retval != 0) {
-        razer_print_err_report(&report, "hid-razer", "set_key_row: request failed");
-        return retval;
-    }
+	retval = razer_send_check_response(razer_dev, &report);
+	if (retval != 0) {
+		razer_print_err_report(&report, "hid-razer",
+			"set_key_row: request failed");
+		return retval;
+	}
 
-    return retval;
+	return retval;
 }
 
 // Set the key colors for the complete keyboard. Takes in an array of RGB bytes.
 int razer_set_key_colors(struct razer_device *razer_dev,
-    unsigned char *row_cols, size_t row_cols_len)
+	unsigned char *row_cols, size_t row_cols_len)
 {
-    int i, retval;
-    int rows                        = razer_get_rows(razer_dev->usb_dev);
-    int columns                     = razer_get_columns(razer_dev->usb_dev);
-    size_t row_cols_required_len    = columns * 3 * rows;
+	int i, retval;
+	int rows                        = razer_get_rows(razer_dev->usb_dev);
+	int columns                     = razer_get_columns(razer_dev->usb_dev);
+	size_t row_cols_required_len    = columns * 3 * rows;
 
-    if (columns < 0 || rows < 0 || row_cols_required_len < 0) {
-        printk(KERN_WARNING "hid-razer: set_key_colors: unsupported device\n");
-        return -EINVAL;
-    }
+	if (columns < 0 || rows < 0 || row_cols_required_len < 0) {
+		printk(KERN_WARNING "hid-razer: set_key_colors: "
+			"unsupported device\n");
+		return -EINVAL;
+	}
 
-    // Validate the input.
-    if (row_cols_len != row_cols_required_len) {
-        printk(KERN_WARNING "hid-razer: set_key_colors: wrong amount of RGB data provided: %lu of %lu\n",
-            row_cols_len, row_cols_required_len);
-        return -EINVAL;
-    }
+	// Validate the input.
+	if (row_cols_len != row_cols_required_len) {
+		printk(KERN_WARNING "hid-razer: set_key_colors: "
+			"wrong amount of RGB data provided: %lu of %lu\n",
+			row_cols_len, row_cols_required_len);
+		return -EINVAL;
+	}
 
-    for(i = 0; i < rows; i++) {
-        retval = razer_set_key_row(razer_dev, i,
-                    (unsigned char*)&row_cols[i*columns*3],
-                    columns * 3);
-        if (retval != 0) {
-            printk(KERN_WARNING "hid-razer: set_key_colors: failed to set colors for row: %d\n", i);
-            return retval;
-        }
-    }
+	for(i = 0; i < rows; i++) {
+		retval = razer_set_key_row(razer_dev, i,
+					(unsigned char*)&row_cols[i*columns*3],
+					columns * 3);
+		if (retval != 0) {
+			printk(KERN_WARNING "hid-razer: set_key_colors: "
+				"failed to set colors for row: %d\n", i);
+			return retval;
+		}
+	}
 
-    return 0;
+	return 0;
 }
 
 // Enable keyboard macro keys. Keycodes for the macro keys are 191-195 for M1-M5.
 int razer_activate_macro_keys(struct razer_device *razer_dev)
 {
-    int retval;
-    struct razer_report report = razer_new_report(0x00, 0x04, 0x02);
-    report.arguments[0] = 0x02;
-    report.arguments[1] = 0x04;
-    report.crc = razer_calculate_crc(&report);
+	int retval;
+	struct razer_report report = razer_new_report(0x00, 0x04, 0x02);
+	report.arguments[0] = 0x02;
+	report.arguments[1] = 0x04;
+	report.crc = razer_calculate_crc(&report);
 
-    retval = razer_send_check_response(razer_dev, &report);
-    if (retval != 0) {
-        razer_print_err_report(&report, "hid-razer", "activate_macro_keys: request failed");
-        return retval;
-    }
+	retval = razer_send_check_response(razer_dev, &report);
+	if (retval != 0) {
+		razer_print_err_report(&report, "hid-razer",
+			"activate_macro_keys: request failed");
+		return retval;
+	}
 
-    return 0;
+	return 0;
 }
 
 // Disable any keyboard effect
 int razer_set_none_mode(struct razer_device *razer_dev)
 {
-    int retval;
-    struct razer_report report = razer_new_report(0x03, 0x0A, 0x01);
-    report.arguments[0] = 0x00; // Effect ID
-    report.crc = razer_calculate_crc(&report);
+	int retval;
+	struct razer_report report = razer_new_report(0x03, 0x0A, 0x01);
+	report.arguments[0] = 0x00; // Effect ID
+	report.crc = razer_calculate_crc(&report);
 
-    retval = razer_send_check_response(razer_dev, &report);
-    if (retval != 0) {
-        razer_print_err_report(&report, "hid-razer", "none_mode: request failed");
-        return retval;
-    }
+	retval = razer_send_check_response(razer_dev, &report);
+	if (retval != 0) {
+		razer_print_err_report(&report, "hid-razer",
+			"none_mode: request failed");
+		return retval;
+	}
 
-    return 0;
+	return 0;
 }
 
 // Set static effect on the keyboard
 int razer_set_static_mode(struct razer_device *razer_dev,
-    struct razer_rgb *color)
+	struct razer_rgb *color)
 {
-    int retval;
-    struct razer_report report = razer_new_report(0x03, 0x0A, 0x04);
-    report.arguments[0] = 0x06;     // Effect ID
-    report.arguments[1] = color->r;
-    report.arguments[2] = color->g;
-    report.arguments[3] = color->b;
-    report.crc = razer_calculate_crc(&report);
+	int retval;
+	struct razer_report report = razer_new_report(0x03, 0x0A, 0x04);
+	report.arguments[0] = 0x06;     // Effect ID
+	report.arguments[1] = color->r;
+	report.arguments[2] = color->g;
+	report.arguments[3] = color->b;
+	report.crc = razer_calculate_crc(&report);
 
-    retval = razer_send_check_response(razer_dev, &report);
-    if (retval != 0) {
-        razer_print_err_report(&report, "hid-razer", "static_mode: request failed");
-        return retval;
-    }
+	retval = razer_send_check_response(razer_dev, &report);
+	if (retval != 0) {
+		razer_print_err_report(&report, "hid-razer",
+			"static_mode: request failed");
+		return retval;
+	}
 
-    return 0;
+	return 0;
 }
 
 // Set custom effect on the keyboard
 int razer_set_custom_mode(struct razer_device *razer_dev)
 {
-    int retval;
-    struct razer_report report = razer_new_report(0x03, 0x0A, 0x02);
-    report.arguments[0] = 0x05; // Effect ID
-    report.arguments[1] = 0x00; // Data frame ID
-    report.crc = razer_calculate_crc(&report);
+	int retval;
+	struct razer_report report = razer_new_report(0x03, 0x0A, 0x02);
+	report.arguments[0] = 0x05; // Effect ID
+	report.arguments[1] = 0x00; // Data frame ID
+	report.crc = razer_calculate_crc(&report);
 
-    retval = razer_send_check_response(razer_dev, &report);
-    if (retval != 0) {
-        razer_print_err_report(&report, "hid-razer", "custom_mode: request failed");
-        return retval;
-    }
+	retval = razer_send_check_response(razer_dev, &report);
+	if (retval != 0) {
+		razer_print_err_report(&report, "hid-razer",
+			"custom_mode: request failed");
+		return retval;
+	}
 
-    return 0;
+	return 0;
 }
 
 // Set the wave effect on the keyboard
 int razer_set_wave_mode(struct razer_device *razer_dev,
-    unsigned char direction)
+	unsigned char direction)
 {
-    int retval;
-    struct razer_report report = razer_new_report(0x03, 0x0A, 0x02);
+	int retval;
+	struct razer_report report = razer_new_report(0x03, 0x0A, 0x02);
 
-    if (direction != 1 && direction != 2) {
-        printk(KERN_WARNING "hid-razer: wave_mode: wave direction must be 1 or 2: got: %d\n", direction);
-        return -EINVAL;
-    }
+	if (direction != 1 && direction != 2) {
+		printk(KERN_WARNING "hid-razer: wave_mode: "
+			"wave direction must be 1 or 2: got: %d\n", direction);
+		return -EINVAL;
+	}
 
-    report.arguments[0] = 0x01; // Effect ID
-    report.arguments[1] = direction; // Direction
-    report.crc = razer_calculate_crc(&report);
+	report.arguments[0] = 0x01; // Effect ID
+	report.arguments[1] = direction; // Direction
+	report.crc = razer_calculate_crc(&report);
 
-    retval = razer_send_check_response(razer_dev, &report);
-    if (retval != 0) {
-        razer_print_err_report(&report, "hid-razer", "wave_mode: request failed");
-        return retval;
-    }
+	retval = razer_send_check_response(razer_dev, &report);
+	if (retval != 0) {
+		razer_print_err_report(&report, "hid-razer",
+			"wave_mode: request failed");
+		return retval;
+	}
 
-    return 0;
+	return 0;
 }
 
 // Set spectrum effect on the keyboard
 int razer_set_spectrum_mode(struct razer_device *razer_dev)
 {
-    int retval;
-    struct razer_report report = razer_new_report(0x03, 0x0A, 0x01);
-    report.arguments[0] = 0x04; // Effect ID
-    report.crc = razer_calculate_crc(&report);
+	int retval;
+	struct razer_report report = razer_new_report(0x03, 0x0A, 0x01);
+	report.arguments[0] = 0x04; // Effect ID
+	report.crc = razer_calculate_crc(&report);
 
-    retval = razer_send_check_response(razer_dev, &report);
-    if (retval != 0) {
-        razer_print_err_report(&report, "hid-razer", "spectrum_mode: request failed");
-        return retval;
-    }
+	retval = razer_send_check_response(razer_dev, &report);
+	if (retval != 0) {
+		razer_print_err_report(&report, "hid-razer",
+			"spectrum_mode: request failed");
+		return retval;
+	}
 
-    return 0;
+	return 0;
 }
 
 // Set reactive effect on the keyboard
 int razer_set_reactive_mode(struct razer_device *razer_dev,
-    unsigned char speed, struct razer_rgb *color)
+	unsigned char speed, struct razer_rgb *color)
 {
-    int retval = 0;
-    struct razer_report report = razer_new_report(0x03, 0x0A, 0x05);
+	int retval = 0;
+	struct razer_report report = razer_new_report(0x03, 0x0A, 0x05);
 
-    if (speed <= 0 || speed >= 4) {
-        printk(KERN_WARNING "hid-razer: reactive_mode: speed must be within 1-3: got: %d\n", speed);
-        return -EINVAL;
-    }
+	if (speed <= 0 || speed >= 4) {
+		printk(KERN_WARNING "hid-razer: reactive_mode: "
+			"speed must be within 1-3: got: %d\n", speed);
+		return -EINVAL;
+	}
 
-    report.arguments[0] = 0x02;     // Effect ID
-    report.arguments[1] = speed;    // Speed
-    report.arguments[2] = color->r;
-    report.arguments[3] = color->g;
-    report.arguments[4] = color->b;
-    report.crc = razer_calculate_crc(&report);
+	report.arguments[0] = 0x02;     // Effect ID
+	report.arguments[1] = speed;    // Speed
+	report.arguments[2] = color->r;
+	report.arguments[3] = color->g;
+	report.arguments[4] = color->b;
+	report.crc = razer_calculate_crc(&report);
 
-    retval = razer_send_check_response(razer_dev, &report);
-    if (retval != 0) {
-        razer_print_err_report(&report, "hid-razer", "reactive_mode: request failed");
-        return retval;
-    }
+	retval = razer_send_check_response(razer_dev, &report);
+	if (retval != 0) {
+		razer_print_err_report(&report, "hid-razer",
+			"reactive_mode: request failed");
+		return retval;
+	}
 
-    return 0;
+	return 0;
 }
 
 // Set the starlight effect on the keyboard.
@@ -437,53 +465,56 @@ int razer_set_reactive_mode(struct razer_device *razer_dev,
 // 2. One color mode: Set color1 and color2 to NULL
 // 3. Two color mode: Set both colors
 int razer_set_starlight_mode(struct razer_device *razer_dev,
-    unsigned char speed, struct razer_rgb *color1, struct razer_rgb *color2)
+	unsigned char speed, struct razer_rgb *color1, struct razer_rgb *color2)
 {
-    int retval;
-    struct razer_report report = razer_new_report(0x03, 0x0A, 0x00); // Data size initial to 0
+	int retval;
+	struct razer_report report = razer_new_report(0x03, 0x0A, 0x00); // Data size initial to 0
 
-    if (speed <= 0 || speed >= 4) {
-        printk(KERN_WARNING "hid-razer: starlight_mode: speed must be within 1-3: got: %d\n", speed);
-        return -EINVAL;
-    }
+	if (speed <= 0 || speed >= 4) {
+		printk(KERN_WARNING "hid-razer: starlight_mode: "
+			"speed must be within 1-3: got: %d\n", speed);
+		return -EINVAL;
+	}
 
-    report.arguments[0] = 0x19;     // Effect ID
-    report.arguments[2] = speed;    // Speed
+	report.arguments[0] = 0x19;     // Effect ID
+	report.arguments[2] = speed;    // Speed
 
-    if (color1 == NULL && color2 == NULL) {
-        report.arguments[1] = 0x03;         // Starlight effect type: random colors
-        report.data_size    = 0x03;
-    }
-    else if (color1 != NULL && color2 == NULL) {
-        report.arguments[1] = 0x01;         // Starlight effect type: one color
-        report.arguments[3] = color1->r;
-        report.arguments[4] = color1->g;
-        report.arguments[5] = color1->b;
-        report.data_size    = 0x06;
-    }
-    else if (color1 != NULL && color2 != NULL) {
-        report.arguments[1] = 0x02;         // Starlight effect type: two colors
-        report.arguments[3] = color1->r;
-        report.arguments[4] = color1->g;
-        report.arguments[5] = color1->b;
-        report.arguments[6] = color2->r;
-        report.arguments[7] = color2->g;
-        report.arguments[8] = color2->b;
-        report.data_size    = 0x09;
-    } else {
-        printk(KERN_WARNING "hid-razer: starlight_mode: invalid colors set\n");
-        return -EINVAL;
-    }
+	if (color1 == NULL && color2 == NULL) {
+		report.arguments[1] = 0x03;         // Starlight effect type: random colors
+		report.data_size    = 0x03;
+	}
+	else if (color1 != NULL && color2 == NULL) {
+		report.arguments[1] = 0x01;         // Starlight effect type: one color
+		report.arguments[3] = color1->r;
+		report.arguments[4] = color1->g;
+		report.arguments[5] = color1->b;
+		report.data_size    = 0x06;
+	}
+	else if (color1 != NULL && color2 != NULL) {
+		report.arguments[1] = 0x02;         // Starlight effect type: two colors
+		report.arguments[3] = color1->r;
+		report.arguments[4] = color1->g;
+		report.arguments[5] = color1->b;
+		report.arguments[6] = color2->r;
+		report.arguments[7] = color2->g;
+		report.arguments[8] = color2->b;
+		report.data_size    = 0x09;
+	} else {
+		printk(KERN_WARNING "hid-razer: starlight_mode: "
+			"invalid colors set\n");
+		return -EINVAL;
+	}
 
-    report.crc = razer_calculate_crc(&report);
+	report.crc = razer_calculate_crc(&report);
 
-    retval = razer_send_check_response(razer_dev, &report);
-    if (retval != 0) {
-        razer_print_err_report(&report, "hid-razer", "starlight_mode: request failed");
-        return retval;
-    }
+	retval = razer_send_check_response(razer_dev, &report);
+	if (retval != 0) {
+		razer_print_err_report(&report, "hid-razer",
+			"starlight_mode: request failed");
+		return retval;
+	}
 
-    return 0;
+	return 0;
 }
 
 
@@ -492,46 +523,48 @@ int razer_set_starlight_mode(struct razer_device *razer_dev,
 // 2. One color mode: Set color1 and color2 to NULL
 // 3. Two color mode: Set both colors
 int razer_set_breath_mode(struct razer_device *razer_dev,
-    struct razer_rgb *color1, struct razer_rgb *color2)
+	struct razer_rgb *color1, struct razer_rgb *color2)
 {
-    int retval;
-    struct razer_report report = razer_new_report(0x03, 0x0A, 0x00); // Data size initial to 0
-    report.arguments[0] = 0x03;             // Effect ID
+	int retval;
+	struct razer_report report = razer_new_report(0x03, 0x0A, 0x00); // Data size initial to 0
+	report.arguments[0] = 0x03; // Effect ID
 
-    if (color1 == NULL && color2 == NULL) {
-        report.arguments[1] = 0x03;         // Breath effect type: random colors
-        report.data_size    = 0x02;
-    }
-    else if (color1 != NULL && color2 == NULL) {
-        report.arguments[1] = 0x01;         // Breath effect type: one color
-        report.arguments[2] = color1->r;
-        report.arguments[3] = color1->g;
-        report.arguments[4] = color1->b;
-        report.data_size    = 0x05;
-    }
-    else if (color1 != NULL && color2 != NULL) {
-        report.arguments[1] = 0x02;         // Breath effect type: two colors
-        report.arguments[2] = color1->r;
-        report.arguments[3] = color1->g;
-        report.arguments[4] = color1->b;
-        report.arguments[5] = color2->r;
-        report.arguments[6] = color2->g;
-        report.arguments[7] = color2->b;
-        report.data_size    = 0x08;
-    } else {
-        printk(KERN_WARNING "hid-razer: breath_mode: invalid colors set\n");
-        return -EINVAL;
-    }
+	if (color1 == NULL && color2 == NULL) {
+		report.arguments[1] = 0x03;         // Breath effect type: random colors
+		report.data_size    = 0x02;
+	}
+	else if (color1 != NULL && color2 == NULL) {
+		report.arguments[1] = 0x01;         // Breath effect type: one color
+		report.arguments[2] = color1->r;
+		report.arguments[3] = color1->g;
+		report.arguments[4] = color1->b;
+		report.data_size    = 0x05;
+	}
+	else if (color1 != NULL && color2 != NULL) {
+		report.arguments[1] = 0x02;         // Breath effect type: two colors
+		report.arguments[2] = color1->r;
+		report.arguments[3] = color1->g;
+		report.arguments[4] = color1->b;
+		report.arguments[5] = color2->r;
+		report.arguments[6] = color2->g;
+		report.arguments[7] = color2->b;
+		report.data_size    = 0x08;
+	} else {
+		printk(KERN_WARNING "hid-razer: breath_mode: "
+			"invalid colors set\n");
+		return -EINVAL;
+	}
 
-    report.crc = razer_calculate_crc(&report);
+	report.crc = razer_calculate_crc(&report);
 
-    retval = razer_send_check_response(razer_dev, &report);
-    if (retval != 0) {
-        razer_print_err_report(&report, "hid-razer", "breath_mode: request failed");
-        return retval;
-    }
+	retval = razer_send_check_response(razer_dev, &report);
+	if (retval != 0) {
+		razer_print_err_report(&report, "hid-razer",
+			"breath_mode: request failed");
+		return retval;
+	}
 
-    return 0;
+	return 0;
 }
 
 
@@ -546,13 +579,14 @@ int razer_set_breath_mode(struct razer_device *razer_dev,
  * Returns a string.
  */
 static ssize_t razer_attr_read_get_serial(struct device *dev,
-    struct device_attribute *attr, char *buf)
+	struct device_attribute *attr, char *buf)
 {
-    char serial_string[100] = "";
+	char serial_string[100] = "";
 
-    // Stealth and the Blade does not have serial via USB, so get it from the DMI table.
-    strcpy(serial_string, dmi_get_system_info(DMI_PRODUCT_SERIAL));
-    return sprintf(buf, "%s\n", &serial_string[0]);
+	// Stealth and the Blade does not have serial via USB,
+	// so get it from the DMI table.
+	strcpy(serial_string, dmi_get_system_info(DMI_PRODUCT_SERIAL));
+	return sprintf(buf, "%s\n", &serial_string[0]);
 }
 
 
@@ -563,18 +597,18 @@ static ssize_t razer_attr_read_get_serial(struct device *dev,
  * Returns a string.
  */
 static ssize_t razer_attr_read_get_firmware_version(struct device *dev,
-    struct device_attribute *attr, char *buf)
+	struct device_attribute *attr, char *buf)
 {
-    struct razer_device *razer_dev  = dev_get_drvdata(dev);
-    char fw_string[100]             = "";
-    int retval;
+	struct razer_device *razer_dev  = dev_get_drvdata(dev);
+	char fw_string[100]             = "";
+	int retval;
 
-    retval = razer_get_firmware_version(razer_dev, &fw_string[0]);
-    if (retval != 0) {
-        return retval;
-    }
+	retval = razer_get_firmware_version(razer_dev, &fw_string[0]);
+	if (retval != 0) {
+		return retval;
+	}
 
-    return sprintf(buf, "%s\n", &fw_string[0]);
+	return sprintf(buf, "%s\n", &fw_string[0]);
 }
 
 
@@ -584,13 +618,13 @@ static ssize_t razer_attr_read_get_firmware_version(struct device *dev,
  * Returns the amount of key rows.
  */
 static ssize_t razer_attr_read_get_key_rows(struct device *dev,
-    struct device_attribute *attr, char *buf)
+	struct device_attribute *attr, char *buf)
 {
-    struct usb_interface *intf  = to_usb_interface(dev->parent);
-    struct usb_device *usb_dev  = interface_to_usbdev(intf);
-    int rows                    = razer_get_rows(usb_dev);
+	struct usb_interface *intf  = to_usb_interface(dev->parent);
+	struct usb_device *usb_dev  = interface_to_usbdev(intf);
+	int rows                    = razer_get_rows(usb_dev);
 
-    return sprintf(buf, "%d\n", rows);
+	return sprintf(buf, "%d\n", rows);
 }
 
 
@@ -600,13 +634,13 @@ static ssize_t razer_attr_read_get_key_rows(struct device *dev,
  * Returns the amount of key columns.
  */
 static ssize_t razer_attr_read_get_key_columns(struct device *dev,
-    struct device_attribute *attr, char *buf)
+	struct device_attribute *attr, char *buf)
 {
-    struct usb_interface *intf  = to_usb_interface(dev->parent);
-    struct usb_device *usb_dev  = interface_to_usbdev(intf);
-    int columns                 = razer_get_columns(usb_dev);
+	struct usb_interface *intf  = to_usb_interface(dev->parent);
+	struct usb_device *usb_dev  = interface_to_usbdev(intf);
+	int columns                 = razer_get_columns(usb_dev);
 
-    return sprintf(buf, "%d\n", columns);
+	return sprintf(buf, "%d\n", columns);
 }
 
 
@@ -616,32 +650,32 @@ static ssize_t razer_attr_read_get_key_columns(struct device *dev,
  * Returns a friendly device type string.
  */
 static ssize_t razer_attr_read_device_type(struct device *dev,
-    struct device_attribute *attr, char *buf)
+	struct device_attribute *attr, char *buf)
 {
-    struct usb_interface *intf = to_usb_interface(dev->parent);
-    struct usb_device *usb_dev = interface_to_usbdev(intf);
+	struct usb_interface *intf = to_usb_interface(dev->parent);
+	struct usb_device *usb_dev = interface_to_usbdev(intf);
 
-    char *device_type;
+	char *device_type;
 
-    switch (usb_dev->descriptor.idProduct)
-    {
-        case USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016:
-            device_type = "Razer Blade Stealth 2016\n";
-            break;
+	switch (usb_dev->descriptor.idProduct)
+	{
+		case USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016:
+			device_type = "Razer Blade Stealth 2016\n";
+			break;
 
-        case USB_DEVICE_ID_RAZER_BLADE_14_2016:
-            device_type = "Razer Blade 14 2016\n";
-            break;
+		case USB_DEVICE_ID_RAZER_BLADE_14_2016:
+			device_type = "Razer Blade 14 2016\n";
+			break;
 
-        case USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA:
-            device_type = "Razer BlackWidow Chroma\n";
-            break;
+		case USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA:
+			device_type = "Razer BlackWidow Chroma\n";
+			break;
 
-        default:
-            device_type = "Unknown Device\n";
-    }
+		default:
+			device_type = "Unknown Device\n";
+	}
 
-    return sprintf(buf, device_type);
+	return sprintf(buf, device_type);
 }
 
 
@@ -651,33 +685,34 @@ static ssize_t razer_attr_read_device_type(struct device *dev,
  * Returns the brightness value from 0-255.
  */
 static ssize_t razer_attr_read_brightness(struct device *dev,
-    struct device_attribute *attr, char *buf)
+	struct device_attribute *attr, char *buf)
 {
-    struct razer_device *razer_dev  = dev_get_drvdata(dev);
-    int brightness                  = razer_get_brightness(razer_dev);
+	struct razer_device *razer_dev  = dev_get_drvdata(dev);
+	int brightness                  = razer_get_brightness(razer_dev);
 
-    return sprintf(buf, "%d\n", brightness);
+	return sprintf(buf, "%d\n", brightness);
 }
 
 
 
 /*
  * Write device file "brightness"
- * Sets the brightness to the ASCII number written to this file. Values from 0-255
+ * Sets the brightness to the ASCII number written to this file.
+ * Values from 0-255.
  */
 static ssize_t razer_attr_write_brightness(struct device *dev,
-    struct device_attribute *attr, const char *buf, size_t count)
+	struct device_attribute *attr, const char *buf, size_t count)
 {
-    struct razer_device *razer_dev  = dev_get_drvdata(dev);
-    int temp                        = simple_strtoul(buf, NULL, 10);
-    int retval;
+	struct razer_device *razer_dev  = dev_get_drvdata(dev);
+	int temp                        = simple_strtoul(buf, NULL, 10);
+	int retval;
 
-    retval = razer_set_brightness(razer_dev, (unsigned char)temp);
-    if (retval != 0) {
-        return retval;
-    }
+	retval = razer_set_brightness(razer_dev, (unsigned char)temp);
+	if (retval != 0) {
+		return retval;
+	}
 
-    return count;
+	return count;
 }
 
 
@@ -689,18 +724,18 @@ static ssize_t razer_attr_write_brightness(struct device *dev,
  * 1 = on
  */
 static ssize_t razer_attr_write_set_logo(struct device *dev,
-    struct device_attribute *attr, const char *buf, size_t count)
+	struct device_attribute *attr, const char *buf, size_t count)
 {
-    struct razer_device *razer_dev  = dev_get_drvdata(dev);
-    int state                       = simple_strtoul(buf, NULL, 10);
-    int retval;
+	struct razer_device *razer_dev  = dev_get_drvdata(dev);
+	int state                       = simple_strtoul(buf, NULL, 10);
+	int retval;
 
-    retval = razer_set_logo(razer_dev, (unsigned char)state);
-    if (retval != 0) {
-        return retval;
-    }
+	retval = razer_set_logo(razer_dev, (unsigned char)state);
+	if (retval != 0) {
+		return retval;
+	}
 
-    return count;
+	return count;
 }
 
 
@@ -712,18 +747,18 @@ static ssize_t razer_attr_write_set_logo(struct device *dev,
  * If 1 the F-keys act as if the FN key is held
  */
 static ssize_t razer_attr_write_fn_mode(struct device *dev,
-    struct device_attribute *attr, const char *buf, size_t count)
+	struct device_attribute *attr, const char *buf, size_t count)
 {
-    struct razer_device *razer_dev  = dev_get_drvdata(dev);
-    int state                       = simple_strtoul(buf, NULL, 10);
-    int retval;
+	struct razer_device *razer_dev  = dev_get_drvdata(dev);
+	int state                       = simple_strtoul(buf, NULL, 10);
+	int retval;
 
-    retval = razer_set_fn_mode(razer_dev, (unsigned char)state);
-    if (retval != 0) {
-        return retval;
-    }
+	retval = razer_set_fn_mode(razer_dev, (unsigned char)state);
+	if (retval != 0) {
+		return retval;
+	}
 
-    return count;
+	return count;
 }
 
 
@@ -733,12 +768,12 @@ static ssize_t razer_attr_write_fn_mode(struct device *dev,
  * Returns the current fn mode state.
  */
 static ssize_t razer_attr_read_fn_mode(struct device *dev,
-    struct device_attribute *attr, char *buf)
+	struct device_attribute *attr, char *buf)
 {
-    struct razer_device *razer_dev  = dev_get_drvdata(dev);
-    struct razer_data *data         = razer_dev->data;
+	struct razer_device *razer_dev  = dev_get_drvdata(dev);
+	struct razer_data *data         = razer_dev->data;
 
-    return sprintf(buf, "%d\n", data->fn_mode_state);
+	return sprintf(buf, "%d\n", data->fn_mode_state);
 }
 
 
@@ -748,22 +783,22 @@ static ssize_t razer_attr_read_fn_mode(struct device *dev,
  * Set the colors of all keys of the keyboard. 3 bytes per color.
  */
 static ssize_t razer_attr_write_set_key_colors(struct device *dev,
-    struct device_attribute *attr, const char *buf, size_t count)
+	struct device_attribute *attr, const char *buf, size_t count)
 {
-    struct razer_device *razer_dev = dev_get_drvdata(dev);
-    int retval;
+	struct razer_device *razer_dev = dev_get_drvdata(dev);
+	int retval;
 
-    retval = razer_set_key_colors(razer_dev, (unsigned char*)&buf[0], count);
-    if (retval != 0) {
-        return retval;
-    }
+	retval = razer_set_key_colors(razer_dev, (unsigned char*)&buf[0], count);
+	if (retval != 0) {
+		return retval;
+	}
 
-    retval = razer_set_custom_mode(razer_dev);
-    if (retval != 0) {
-        return retval;
-    }
+	retval = razer_set_custom_mode(razer_dev);
+	if (retval != 0) {
+		return retval;
+	}
 
-    return count;
+	return count;
 }
 
 
@@ -773,17 +808,17 @@ static ssize_t razer_attr_write_set_key_colors(struct device *dev,
  * Disable keyboard effects / turns the keyboard LEDs off.
  */
 static ssize_t razer_attr_write_mode_none(struct device *dev,
-    struct device_attribute *attr, const char *buf, size_t count)
+	struct device_attribute *attr, const char *buf, size_t count)
 {
-    struct razer_device *razer_dev = dev_get_drvdata(dev);
-    int retval;
+	struct razer_device *razer_dev = dev_get_drvdata(dev);
+	int retval;
 
-    retval = razer_set_none_mode(razer_dev);
-    if (retval != 0) {
-        return retval;
-    }
+	retval = razer_set_none_mode(razer_dev);
+	if (retval != 0) {
+		return retval;
+	}
 
-    return count;
+	return count;
 }
 
 
@@ -792,22 +827,24 @@ static ssize_t razer_attr_write_mode_none(struct device *dev,
  * Write device file "mode_static"
  * Set the keyboard to static mode when 3 RGB bytes are written.
  */
-static ssize_t razer_attr_write_mode_static(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
+static ssize_t razer_attr_write_mode_static(struct device *dev,
+	struct device_attribute *attr, const char *buf, size_t count)
 {
-    struct razer_device *razer_dev = dev_get_drvdata(dev);
-    int retval;
+	struct razer_device *razer_dev = dev_get_drvdata(dev);
+	int retval;
 
-    if (count != 3) {
-        printk(KERN_WARNING "hid-razer: mode static requires 3 RGB bytes\n");
-        return -EINVAL;
-    }
+	if (count != 3) {
+		printk(KERN_WARNING "hid-razer: "
+			"mode static requires 3 RGB bytes\n");
+		return -EINVAL;
+	}
 
-    retval = razer_set_static_mode(razer_dev, (struct razer_rgb*)&buf[0]);
-    if (retval != 0) {
-        return retval;
-    }
+	retval = razer_set_static_mode(razer_dev, (struct razer_rgb*)&buf[0]);
+	if (retval != 0) {
+		return retval;
+	}
 
-    return count;
+	return count;
 }
 
 
@@ -817,39 +854,40 @@ static ssize_t razer_attr_write_mode_static(struct device *dev, struct device_at
  * Sets the keyboard to custom mode whenever the file is written to.
  */
 static ssize_t razer_attr_write_mode_custom(struct device *dev,
-    struct device_attribute *attr, const char *buf, size_t count)
+	struct device_attribute *attr, const char *buf, size_t count)
 {
-    struct razer_device *razer_dev = dev_get_drvdata(dev);
-    int retval;
+	struct razer_device *razer_dev = dev_get_drvdata(dev);
+	int retval;
 
-    retval = razer_set_custom_mode(razer_dev);
-    if (retval != 0) {
-        return retval;
-    }
+	retval = razer_set_custom_mode(razer_dev);
+	if (retval != 0) {
+		return retval;
+	}
 
-    return count;
+	return count;
 }
 
 
 
 /*
  * Write device file "mode_wave"
- * If the ASCII number 1 is written then the wave effect is displayed moving left across the keyboard.
+ * If the ASCII number 1 is written then the wave effect is displayed
+ * moving left across the keyboard.
  * If the ASCII number 2 is written then the wave effect goes right.
  */
 static ssize_t razer_attr_write_mode_wave(struct device *dev,
-    struct device_attribute *attr, const char *buf, size_t count)
+	struct device_attribute *attr, const char *buf, size_t count)
 {
-    struct razer_device *razer_dev  = dev_get_drvdata(dev);
-    int temp                        = simple_strtoul(buf, NULL, 10);
-    int retval;
+	struct razer_device *razer_dev  = dev_get_drvdata(dev);
+	int temp                        = simple_strtoul(buf, NULL, 10);
+	int retval;
 
-    retval = razer_set_wave_mode(razer_dev, temp);
-    if (retval != 0) {
-        return retval;
-    }
+	retval = razer_set_wave_mode(razer_dev, temp);
+	if (retval != 0) {
+		return retval;
+	}
 
-    return count;
+	return count;
 }
 
 
@@ -859,46 +897,48 @@ static ssize_t razer_attr_write_mode_wave(struct device *dev,
  * Specrum effect mode is activated whenever the file is written to.
  */
 static ssize_t razer_attr_write_mode_spectrum(struct device *dev,
-    struct device_attribute *attr, const char *buf, size_t count)
+	struct device_attribute *attr, const char *buf, size_t count)
 {
-    struct razer_device *razer_dev = dev_get_drvdata(dev);
-    int retval;
+	struct razer_device *razer_dev = dev_get_drvdata(dev);
+	int retval;
 
-    retval = razer_set_spectrum_mode(razer_dev);
-    if (retval != 0) {
-        return retval;
-    }
+	retval = razer_set_spectrum_mode(razer_dev);
+	if (retval != 0) {
+		return retval;
+	}
 
-    return count;
+	return count;
 }
 
 
 
 /*
  * Write device file "mode_reactive"
- * Sets reactive mode when this file is written to. A speed byte and 3 RGB bytes should be written.
+ * Sets reactive mode when this file is written to.
+ * A speed byte and 3 RGB bytes should be written.
  * The speed must be within 1-3
  * 1 Short, 2 Medium, 3 Long
  */
 static ssize_t razer_attr_write_mode_reactive(struct device *dev,
-    struct device_attribute *attr, const char *buf, size_t count)
+	struct device_attribute *attr, const char *buf, size_t count)
 {
-    struct razer_device *razer_dev = dev_get_drvdata(dev);
-    int retval;
+	struct razer_device *razer_dev = dev_get_drvdata(dev);
+	int retval;
 
-    if (count != 4) {
-        printk(KERN_WARNING "hid-razer: mode reactive requires one speed byte followed by 3 RGB bytes\n");
-        return -EINVAL;
-    }
+	if (count != 4) {
+		printk(KERN_WARNING "hid-razer: mode reactive "
+			"requires one speed byte followed by 3 RGB bytes\n");
+		return -EINVAL;
+	}
 
-    retval = razer_set_reactive_mode(razer_dev,
-                (unsigned char)buf[0],
-                (struct razer_rgb*)&buf[1]);
-    if (retval != 0) {
-        return retval;
-    }
+	retval = razer_set_reactive_mode(razer_dev,
+				(unsigned char)buf[0],
+				(struct razer_rgb*)&buf[1]);
+	if (retval != 0) {
+		return retval;
+	}
 
-    return count;
+	return count;
 }
 
 
@@ -915,35 +955,36 @@ static ssize_t razer_attr_write_mode_reactive(struct device *dev,
  *   Mode 3: random colors. Anything else passed.
  */
 static ssize_t razer_attr_write_mode_starlight(struct device *dev,
-    struct device_attribute *attr, const char *buf, size_t count)
+	struct device_attribute *attr, const char *buf, size_t count)
 {
-    struct razer_device *razer_dev  = dev_get_drvdata(dev);
-    struct razer_rgb* color1        = NULL;
-    struct razer_rgb* color2        = NULL;
-    int retval;
+	struct razer_device *razer_dev  = dev_get_drvdata(dev);
+	struct razer_rgb* color1        = NULL;
+	struct razer_rgb* color2        = NULL;
+	int retval;
 
-    if (count < 1) {
-        printk(KERN_WARNING "hid-razer: mode starlight requires one speed byte\n");
-        return -EINVAL;
-    }
+	if (count < 1) {
+		printk(KERN_WARNING "hid-razer: mode starlight "
+			"requires one speed byte\n");
+		return -EINVAL;
+	}
 
-    if (count == 4) {
-        // Single color mode
-        color1 = (struct razer_rgb*)&buf[1];
-    }
-    else if (count == 7) {
-        // Dual color mode
-        color1 = (struct razer_rgb*)&buf[1];
-        color2 = (struct razer_rgb*)&buf[4];
-    }
+	if (count == 4) {
+		// Single color mode
+		color1 = (struct razer_rgb*)&buf[1];
+	}
+	else if (count == 7) {
+		// Dual color mode
+		color1 = (struct razer_rgb*)&buf[1];
+		color2 = (struct razer_rgb*)&buf[4];
+	}
 
-    retval = razer_set_starlight_mode(razer_dev, (unsigned char)buf[0],
-                color1, color2);
-    if (retval != 0) {
-        return retval;
-    }
+	retval = razer_set_starlight_mode(razer_dev, (unsigned char)buf[0],
+				color1, color2);
+	if (retval != 0) {
+		return retval;
+	}
 
-    return count;
+	return count;
 }
 
 
@@ -956,29 +997,29 @@ static ssize_t razer_attr_write_mode_starlight(struct device *dev,
  * Mode 3 is fading in and out between random colors. Anything else passed.
  */
 static ssize_t razer_attr_write_mode_breath(struct device *dev,
-    struct device_attribute *attr, const char *buf, size_t count)
+	struct device_attribute *attr, const char *buf, size_t count)
 {
-    struct razer_device *razer_dev  = dev_get_drvdata(dev);
-    struct razer_rgb* color1        = NULL;
-    struct razer_rgb* color2        = NULL;
-    int retval;
+	struct razer_device *razer_dev  = dev_get_drvdata(dev);
+	struct razer_rgb* color1        = NULL;
+	struct razer_rgb* color2        = NULL;
+	int retval;
 
-    if (count == 3) {
-        // Single color mode
-        color1 = (struct razer_rgb*)&buf[0];
-    }
-    else if (count == 6) {
-        // Dual color mode
-        color1 = (struct razer_rgb*)&buf[0];
-        color2 = (struct razer_rgb*)&buf[3];
-    }
+	if (count == 3) {
+		// Single color mode
+		color1 = (struct razer_rgb*)&buf[0];
+	}
+	else if (count == 6) {
+		// Dual color mode
+		color1 = (struct razer_rgb*)&buf[0];
+		color2 = (struct razer_rgb*)&buf[3];
+	}
 
-    retval = razer_set_breath_mode(razer_dev, color1, color2);
-    if (retval != 0) {
-        return retval;
-    }
+	retval = razer_set_breath_mode(razer_dev, color1, color2);
+	if (retval != 0) {
+		return retval;
+	}
 
-    return count;
+	return count;
 }
 
 
@@ -1024,11 +1065,11 @@ static DEVICE_ATTR(mode_starlight,  0220, NULL, razer_attr_write_mode_starlight)
  */
 int razer_init_data(struct razer_data *data)
 {
-    // Set all values to an unset state.
-    data->macro_keys_state  = -1;
-    data->fn_mode_state     = -1;
+	// Set all values to an unset state.
+	data->macro_keys_state  = -1;
+	data->fn_mode_state     = -1;
 
-    return 0;
+	return 0;
 }
 
 
@@ -1038,30 +1079,31 @@ int razer_init_data(struct razer_data *data)
  */
 int razer_load_states(struct razer_device *razer_dev)
 {
-    int retval;
-    struct razer_data *data = razer_dev->data;
+	int retval;
+	struct razer_data *data = razer_dev->data;
 
-    if (!data) {
-        return 0;
-    }
+	if (!data) {
+		return 0;
+	}
 
-    // Enable the macro keys if required.
-    if (data->macro_keys_state == 1) {
-        retval = razer_activate_macro_keys(razer_dev);
-        if (retval != 0) {
-            return retval;
-        }
-    }
+	// Enable the macro keys if required.
+	if (data->macro_keys_state == 1) {
+		retval = razer_activate_macro_keys(razer_dev);
+		if (retval != 0) {
+			return retval;
+		}
+	}
 
-    // Set the FN mode if required.
-    if (data->fn_mode_state >= 0) {
-        retval = razer_set_fn_mode(razer_dev, (unsigned char)data->fn_mode_state);
-        if (retval != 0) {
-            return retval;
-        }
-    }
+	// Set the FN mode if required.
+	if (data->fn_mode_state >= 0) {
+		retval = razer_set_fn_mode(razer_dev,
+				(unsigned char)data->fn_mode_state);
+		if (retval != 0) {
+			return retval;
+		}
+	}
 
-    return 0;
+	return 0;
 }
 
 
@@ -1070,171 +1112,172 @@ int razer_load_states(struct razer_device *razer_dev)
  * Probe method is ran whenever a device is bound to the driver.
  */
 static int razer_probe(struct hid_device *hdev,
-             const struct hid_device_id *id)
+			 const struct hid_device_id *id)
 {
-    int retval;
-    struct device *dev              = &hdev->dev;
-    struct usb_device *usb_dev      = interface_to_usbdev(to_usb_interface(dev->parent));
-    struct razer_device *razer_dev;
-    struct razer_data *data;
+	int retval;
+	struct device *dev              = &hdev->dev;
+	struct usb_interface *intf      = to_usb_interface(dev->parent);
+	struct usb_device *usb_dev      = interface_to_usbdev(intf);
+	struct razer_device *razer_dev;
+	struct razer_data *data;
 
-    razer_dev = kzalloc(sizeof(struct razer_device), GFP_KERNEL);
-    if (!razer_dev) {
-        hid_err(hdev, "can't alloc razer device descriptor\n");
-        return -ENOMEM;
-    }
+	razer_dev = kzalloc(sizeof(struct razer_device), GFP_KERNEL);
+	if (!razer_dev) {
+		hid_err(hdev, "can't alloc razer device descriptor\n");
+		return -ENOMEM;
+	}
 
-    retval = razer_init_device(razer_dev, usb_dev);
-    if (retval != 0) {
-        hid_err(hdev, "failed to initialize razer device descriptor\n");
-        goto exit_free_razer_dev;
-    }
+	retval = razer_init_device(razer_dev, usb_dev);
+	if (retval != 0) {
+		hid_err(hdev, "failed to initialize razer device descriptor\n");
+		goto exit_free_razer_dev;
+	}
 
-    data = kzalloc(sizeof(struct razer_data), GFP_KERNEL);
-    if (!data) {
-        hid_err(hdev, "can't alloc razer data\n");
-        retval = -ENOMEM;
-        goto exit_free_razer_dev;
-    }
+	data = kzalloc(sizeof(struct razer_data), GFP_KERNEL);
+	if (!data) {
+		hid_err(hdev, "can't alloc razer data\n");
+		retval = -ENOMEM;
+		goto exit_free_razer_dev;
+	}
 
-    retval = razer_init_data(data);
-    if (retval != 0) {
-        hid_err(hdev, "failed to initialize razer data\n");
-        goto exit_free;
-    }
+	retval = razer_init_data(data);
+	if (retval != 0) {
+		hid_err(hdev, "failed to initialize razer data\n");
+		goto exit_free;
+	}
 
-    dev_set_drvdata(dev, razer_dev);
-    razer_dev->data         = data;
-    razer_dev->report_index = RAZER_DEFAULT_REPORT_INDEX;
-
-
-    // Default files
-    retval = device_create_file(dev, &dev_attr_get_serial);
-    if (retval)
-        goto exit_free;
-    retval = device_create_file(dev, &dev_attr_get_firmware_version);
-    if (retval)
-        goto exit_free;
-    retval = device_create_file(dev, &dev_attr_device_type);
-    if (retval)
-        goto exit_free;
-    retval = device_create_file(dev, &dev_attr_brightness);
-    if (retval)
-        goto exit_free;
+	dev_set_drvdata(dev, razer_dev);
+	razer_dev->data         = data;
+	razer_dev->report_index = RAZER_DEFAULT_REPORT_INDEX;
 
 
-    // Custom files depending on the device support.
-    if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016 ||
-            usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_14_2016)
-    {
-        // Set the default fn mode state.
-        data->fn_mode_state = 1;
-
-        retval = device_create_file(dev, &dev_attr_fn_mode);
-        if (retval)
-            goto exit_free;
-        retval = device_create_file(dev, &dev_attr_get_key_rows);
-        if (retval)
-            goto exit_free;
-        retval = device_create_file(dev, &dev_attr_get_key_columns);
-        if (retval)
-            goto exit_free;
-        retval = device_create_file(dev, &dev_attr_set_logo);
-        if (retval)
-            goto exit_free;
-        retval = device_create_file(dev, &dev_attr_set_key_colors);
-        if (retval)
-            goto exit_free;
-
-        // Modes
-        retval = device_create_file(dev, &dev_attr_mode_none);
-        if (retval)
-            goto exit_free;
-        retval = device_create_file(dev, &dev_attr_mode_static);
-        if (retval)
-            goto exit_free;
-        retval = device_create_file(dev, &dev_attr_mode_custom);
-        if (retval)
-            goto exit_free;
-        retval = device_create_file(dev, &dev_attr_mode_wave);
-        if (retval)
-            goto exit_free;
-        retval = device_create_file(dev, &dev_attr_mode_spectrum);
-        if (retval)
-            goto exit_free;
-        retval = device_create_file(dev, &dev_attr_mode_reactive);
-        if (retval)
-            goto exit_free;
-        retval = device_create_file(dev, &dev_attr_mode_breath);
-        if (retval)
-            goto exit_free;
-        retval = device_create_file(dev, &dev_attr_mode_starlight);
-        if (retval)
-            goto exit_free;
-    }
-    else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA)
-    {
-        // Enable the macro keys state.
-        data->macro_keys_state = 1;
-
-        retval = device_create_file(dev, &dev_attr_get_key_rows);
-        if (retval)
-            goto exit_free;
-        retval = device_create_file(dev, &dev_attr_get_key_columns);
-        if (retval)
-            goto exit_free;
-        retval = device_create_file(dev, &dev_attr_set_key_colors);
-        if (retval)
-            goto exit_free;
-
-        // Modes
-        retval = device_create_file(dev, &dev_attr_mode_none);
-        if (retval)
-            goto exit_free;
-        retval = device_create_file(dev, &dev_attr_mode_static);
-        if (retval)
-            goto exit_free;
-        retval = device_create_file(dev, &dev_attr_mode_custom);
-        if (retval)
-            goto exit_free;
-        retval = device_create_file(dev, &dev_attr_mode_wave);
-        if (retval)
-            goto exit_free;
-        retval = device_create_file(dev, &dev_attr_mode_spectrum);
-        if (retval)
-            goto exit_free;
-        retval = device_create_file(dev, &dev_attr_mode_reactive);
-        if (retval)
-            goto exit_free;
-        retval = device_create_file(dev, &dev_attr_mode_breath);
-        if (retval)
-            goto exit_free;
-    }
+	// Default files
+	retval = device_create_file(dev, &dev_attr_get_serial);
+	if (retval)
+		goto exit_free;
+	retval = device_create_file(dev, &dev_attr_get_firmware_version);
+	if (retval)
+		goto exit_free;
+	retval = device_create_file(dev, &dev_attr_device_type);
+	if (retval)
+		goto exit_free;
+	retval = device_create_file(dev, &dev_attr_brightness);
+	if (retval)
+		goto exit_free;
 
 
-    retval = hid_parse(hdev);
-    if (retval)    {
-        hid_err(hdev, "parse failed\n");
-        goto exit_free;
-    }
-    retval = hid_hw_start(hdev, HID_CONNECT_DEFAULT);
-    if (retval) {
-        hid_err(hdev, "hw start failed\n");
-        goto exit_free;
-    }
+	// Custom files depending on the device support.
+	if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016 ||
+		usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_14_2016)
+	{
+		// Set the default fn mode state.
+		data->fn_mode_state = 1;
 
-    usb_disable_autosuspend(usb_dev);
+		retval = device_create_file(dev, &dev_attr_fn_mode);
+		if (retval)
+			goto exit_free;
+		retval = device_create_file(dev, &dev_attr_get_key_rows);
+		if (retval)
+			goto exit_free;
+		retval = device_create_file(dev, &dev_attr_get_key_columns);
+		if (retval)
+			goto exit_free;
+		retval = device_create_file(dev, &dev_attr_set_logo);
+		if (retval)
+			goto exit_free;
+		retval = device_create_file(dev, &dev_attr_set_key_colors);
+		if (retval)
+			goto exit_free;
 
-    // Finally load any set states. Ignore errors. They are not fatal.
-    // Errors will be logged.
-    razer_load_states(razer_dev);
+		// Modes
+		retval = device_create_file(dev, &dev_attr_mode_none);
+		if (retval)
+			goto exit_free;
+		retval = device_create_file(dev, &dev_attr_mode_static);
+		if (retval)
+			goto exit_free;
+		retval = device_create_file(dev, &dev_attr_mode_custom);
+		if (retval)
+			goto exit_free;
+		retval = device_create_file(dev, &dev_attr_mode_wave);
+		if (retval)
+			goto exit_free;
+		retval = device_create_file(dev, &dev_attr_mode_spectrum);
+		if (retval)
+			goto exit_free;
+		retval = device_create_file(dev, &dev_attr_mode_reactive);
+		if (retval)
+			goto exit_free;
+		retval = device_create_file(dev, &dev_attr_mode_breath);
+		if (retval)
+			goto exit_free;
+		retval = device_create_file(dev, &dev_attr_mode_starlight);
+		if (retval)
+			goto exit_free;
+	}
+	else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA)
+	{
+		// Enable the macro keys state.
+		data->macro_keys_state = 1;
 
-    return 0;
+		retval = device_create_file(dev, &dev_attr_get_key_rows);
+		if (retval)
+			goto exit_free;
+		retval = device_create_file(dev, &dev_attr_get_key_columns);
+		if (retval)
+			goto exit_free;
+		retval = device_create_file(dev, &dev_attr_set_key_colors);
+		if (retval)
+			goto exit_free;
+
+		// Modes
+		retval = device_create_file(dev, &dev_attr_mode_none);
+		if (retval)
+			goto exit_free;
+		retval = device_create_file(dev, &dev_attr_mode_static);
+		if (retval)
+			goto exit_free;
+		retval = device_create_file(dev, &dev_attr_mode_custom);
+		if (retval)
+			goto exit_free;
+		retval = device_create_file(dev, &dev_attr_mode_wave);
+		if (retval)
+			goto exit_free;
+		retval = device_create_file(dev, &dev_attr_mode_spectrum);
+		if (retval)
+			goto exit_free;
+		retval = device_create_file(dev, &dev_attr_mode_reactive);
+		if (retval)
+			goto exit_free;
+		retval = device_create_file(dev, &dev_attr_mode_breath);
+		if (retval)
+			goto exit_free;
+	}
+
+
+	retval = hid_parse(hdev);
+	if (retval)    {
+		hid_err(hdev, "parse failed\n");
+		goto exit_free;
+	}
+	retval = hid_hw_start(hdev, HID_CONNECT_DEFAULT);
+	if (retval) {
+		hid_err(hdev, "hw start failed\n");
+		goto exit_free;
+	}
+
+	usb_disable_autosuspend(usb_dev);
+
+	// Finally load any set states. Ignore errors. They are not fatal.
+	// Errors will be logged.
+	razer_load_states(razer_dev);
+
+	return 0;
 exit_free:
-    kfree(data);
+	kfree(data);
 exit_free_razer_dev:
-    kfree(razer_dev);
-    return retval;
+	kfree(razer_dev);
+	return retval;
 }
 
 
@@ -1244,59 +1287,60 @@ exit_free_razer_dev:
  */
 static void razer_disconnect(struct hid_device *hdev)
 {
-    struct device *dev              = &hdev->dev;
-    struct usb_device *usb_dev      = interface_to_usbdev(to_usb_interface(dev->parent));
-    struct razer_device *razer_dev  = dev_get_drvdata(dev);
-    struct razer_data *data         = razer_dev->data;
+	struct device *dev              = &hdev->dev;
+	struct usb_interface *intf      = to_usb_interface(dev->parent);
+	struct usb_device *usb_dev      = interface_to_usbdev(intf);
+	struct razer_device *razer_dev  = dev_get_drvdata(dev);
+	struct razer_data *data         = razer_dev->data;
 
-    // Remove the default files
-    device_remove_file(dev, &dev_attr_get_firmware_version);
-    device_remove_file(dev, &dev_attr_get_serial);
-    device_remove_file(dev, &dev_attr_device_type);
-    device_remove_file(dev, &dev_attr_brightness);
-
-
-    // Custom files depending on the device support.
-    if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016 ||
-            usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_14_2016)
-    {
-        device_remove_file(dev, &dev_attr_fn_mode);
-        device_remove_file(dev, &dev_attr_get_key_rows);
-        device_remove_file(dev, &dev_attr_get_key_columns);
-        device_remove_file(dev, &dev_attr_set_logo);
-        device_remove_file(dev, &dev_attr_set_key_colors);
-
-        // Modes
-        device_remove_file(dev, &dev_attr_mode_none);
-        device_remove_file(dev, &dev_attr_mode_static);
-        device_remove_file(dev, &dev_attr_mode_custom);
-        device_remove_file(dev, &dev_attr_mode_wave);
-        device_remove_file(dev, &dev_attr_mode_spectrum);
-        device_remove_file(dev, &dev_attr_mode_reactive);
-        device_remove_file(dev, &dev_attr_mode_breath);
-        device_remove_file(dev, &dev_attr_mode_starlight);
-    }
-    else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA)
-    {
-        device_remove_file(dev, &dev_attr_get_key_rows);
-        device_remove_file(dev, &dev_attr_get_key_columns);
-        device_remove_file(dev, &dev_attr_set_key_colors);
-
-        // Modes
-        device_remove_file(dev, &dev_attr_mode_none);
-        device_remove_file(dev, &dev_attr_mode_static);
-        device_remove_file(dev, &dev_attr_mode_custom);
-        device_remove_file(dev, &dev_attr_mode_wave);
-        device_remove_file(dev, &dev_attr_mode_spectrum);
-        device_remove_file(dev, &dev_attr_mode_reactive);
-        device_remove_file(dev, &dev_attr_mode_breath);
-    }
+	// Remove the default files
+	device_remove_file(dev, &dev_attr_get_firmware_version);
+	device_remove_file(dev, &dev_attr_get_serial);
+	device_remove_file(dev, &dev_attr_device_type);
+	device_remove_file(dev, &dev_attr_brightness);
 
 
-    hid_hw_stop(hdev);
-    kfree(razer_dev);
-    kfree(data);
-    dev_info(dev, "razer device disconnected\n");
+	// Custom files depending on the device support.
+	if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016 ||
+		usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_14_2016)
+	{
+		device_remove_file(dev, &dev_attr_fn_mode);
+		device_remove_file(dev, &dev_attr_get_key_rows);
+		device_remove_file(dev, &dev_attr_get_key_columns);
+		device_remove_file(dev, &dev_attr_set_logo);
+		device_remove_file(dev, &dev_attr_set_key_colors);
+
+		// Modes
+		device_remove_file(dev, &dev_attr_mode_none);
+		device_remove_file(dev, &dev_attr_mode_static);
+		device_remove_file(dev, &dev_attr_mode_custom);
+		device_remove_file(dev, &dev_attr_mode_wave);
+		device_remove_file(dev, &dev_attr_mode_spectrum);
+		device_remove_file(dev, &dev_attr_mode_reactive);
+		device_remove_file(dev, &dev_attr_mode_breath);
+		device_remove_file(dev, &dev_attr_mode_starlight);
+	}
+	else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA)
+	{
+		device_remove_file(dev, &dev_attr_get_key_rows);
+		device_remove_file(dev, &dev_attr_get_key_columns);
+		device_remove_file(dev, &dev_attr_set_key_colors);
+
+		// Modes
+		device_remove_file(dev, &dev_attr_mode_none);
+		device_remove_file(dev, &dev_attr_mode_static);
+		device_remove_file(dev, &dev_attr_mode_custom);
+		device_remove_file(dev, &dev_attr_mode_wave);
+		device_remove_file(dev, &dev_attr_mode_spectrum);
+		device_remove_file(dev, &dev_attr_mode_reactive);
+		device_remove_file(dev, &dev_attr_mode_breath);
+	}
+
+
+	hid_hw_stop(hdev);
+	kfree(razer_dev);
+	kfree(data);
+	dev_info(dev, "razer device disconnected\n");
 }
 
 
@@ -1312,7 +1356,7 @@ static void razer_disconnect(struct hid_device *hdev)
  */
 static int razer_suspend(struct hid_device *hdev, pm_message_t message)
 {
-    return 0;
+	return 0;
 }
 
 
@@ -1322,14 +1366,14 @@ static int razer_suspend(struct hid_device *hdev, pm_message_t message)
  */
 static int razer_resume(struct hid_device *hdev)
 {
-    struct device *dev              = &hdev->dev;
-    struct razer_device *razer_dev  = dev_get_drvdata(dev);
+	struct device *dev              = &hdev->dev;
+	struct razer_device *razer_dev  = dev_get_drvdata(dev);
 
-    // Load any set states. Ignore errors. They are not fatal.
-    // Errors will be logged.
-    razer_load_states(razer_dev);
+	// Load any set states. Ignore errors. They are not fatal.
+	// Errors will be logged.
+	razer_load_states(razer_dev);
 
-    return 0;
+	return 0;
 }
 
 
@@ -1339,7 +1383,7 @@ static int razer_resume(struct hid_device *hdev)
  */
 static int razer_reset_resume(struct hid_device *hdev)
 {
-    return razer_resume(hdev);
+	return razer_resume(hdev);
 }
 
 #endif
@@ -1351,10 +1395,10 @@ static int razer_reset_resume(struct hid_device *hdev)
 //###############################//
 
 static const struct hid_device_id razer_devices[] = {
-    { HID_USB_DEVICE(USB_VENDOR_ID_RAZER, USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016) },
-    { HID_USB_DEVICE(USB_VENDOR_ID_RAZER, USB_DEVICE_ID_RAZER_BLADE_14_2016) },
-    { HID_USB_DEVICE(USB_VENDOR_ID_RAZER, USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) },
-    { }
+	{ HID_USB_DEVICE(USB_VENDOR_ID_RAZER, USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016) },
+	{ HID_USB_DEVICE(USB_VENDOR_ID_RAZER, USB_DEVICE_ID_RAZER_BLADE_14_2016) },
+	{ HID_USB_DEVICE(USB_VENDOR_ID_RAZER, USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) },
+	{ }
 };
 
 MODULE_DEVICE_TABLE(hid, razer_devices);
@@ -1366,17 +1410,17 @@ MODULE_DEVICE_TABLE(hid, razer_devices);
 //############################################//
 
 static struct hid_driver razer_driver = {
-    .name           = "hid-razer",
-    .id_table       = razer_devices,
+	.name           = "hid-razer",
+	.id_table       = razer_devices,
 
 #ifdef CONFIG_PM
-    .suspend        = razer_suspend,
-    .resume         = razer_resume,
-    .reset_resume   = razer_reset_resume,
+	.suspend        = razer_suspend,
+	.resume         = razer_resume,
+	.reset_resume   = razer_reset_resume,
 #endif
 
-    .probe          = razer_probe,
-    .remove         = razer_disconnect
+	.probe          = razer_probe,
+	.remove         = razer_disconnect
 };
 
 module_hid_driver(razer_driver);

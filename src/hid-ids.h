@@ -14,39 +14,12 @@
  * GNU General Public License for more details.
  */
 
-#ifndef __HID_RAZER_H
-#define __HID_RAZER_H
+#ifndef HID_IDS_H_FILE
+#define HID_IDS_H_FILE
 
-#include <linux/types.h>
+#define USB_VENDOR_ID_RAZER                     0x1532
+#define USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016  0x0205
+#define USB_DEVICE_ID_RAZER_BLADE_14_2016       0x020F
+#define USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA   0x0203
 
-
-
-//#################//
-//### Constants ###//
-//#################//
-
-// Report indexes.
-#define RAZER_DEFAULT_REPORT_INDEX  0x02
-
-// Keyboard rows and columns:
-#define RAZER_STEALTH_2016_ROWS     0x06
-#define RAZER_STEALTH_2016_COLUMNS  0x10
-
-#define RAZER_BLADE_14_2016_ROWS    0x06
-#define RAZER_BLADE_14_2016_COLUMNS 0x10
-
-#define RAZER_BLACKWIDOW_CHROMA_ROWS    0x06
-#define RAZER_BLACKWIDOW_CHROMA_COLUMNS 0x16
-
-
-
-//#############//
-//### Types ###//
-//#############//
-
-struct razer_data {
-	char macro_keys_state;
-	char fn_mode_state;
-};
-
-#endif // __HID_RAZER_H
+#endif // HID_IDS_H_FILE

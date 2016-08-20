@@ -42,15 +42,14 @@ MODULE_VERSION("1.0.0");
  * Initialize a razer device struct.
  */
 int razer_init_device(struct razer_device *razer_dev,
-    struct usb_device *usb_dev)
+	struct usb_device *usb_dev)
 {
-    razer_dev->data     = NULL;
-    razer_dev->usb_dev  = usb_dev;
-    mutex_init(&razer_dev->lock);
+	razer_dev->data     = NULL;
+	razer_dev->usb_dev  = usb_dev;
+	mutex_init(&razer_dev->lock);
 
-    return 0;
+	return 0;
 }
-
 EXPORT_SYMBOL_GPL(razer_init_device);
 
 
@@ -59,23 +58,23 @@ EXPORT_SYMBOL_GPL(razer_init_device);
  * Get an initialised razer report
  */
 struct razer_report razer_new_report(unsigned char command_class,
-    unsigned char command_id, unsigned char data_size)
+	unsigned char command_id, unsigned char data_size)
 {
-    struct razer_report new_report;
-    memset(&new_report, 0, sizeof(struct razer_report));
+	struct razer_report new_report;
 
-    new_report.status               = RAZER_STATUS_NEW_COMMAND;
-    new_report.transaction_id       = 0xFF;
-    new_report.remaining_packets    = 0x00;
-    new_report.protocol_type        = 0x00;
-    new_report.reserved             = 0x00;
-    new_report.command_class        = command_class;
-    new_report.command_id           = command_id;
-    new_report.data_size            = data_size;
+	memset(&new_report, 0, sizeof(struct razer_report));
 
-    return new_report;
+	new_report.status               = RAZER_STATUS_NEW_COMMAND;
+	new_report.transaction_id       = 0xFF;
+	new_report.remaining_packets    = 0x00;
+	new_report.protocol_type        = 0x00;
+	new_report.reserved             = 0x00;
+	new_report.command_class        = command_class;
+	new_report.command_id           = command_id;
+	new_report.data_size            = data_size;
+
+	return new_report;
 }
-
 EXPORT_SYMBOL_GPL(razer_new_report);
 
 
@@ -84,45 +83,44 @@ EXPORT_SYMBOL_GPL(razer_new_report);
  * Send an USB control report to the device.
  * Returns 0 on success.
  */
-int _razer_send(struct razer_device *razer_dev, struct razer_report* report)
+int _razer_send(struct razer_device *razer_dev, struct razer_report *report)
 {
-    const uint size = sizeof(struct razer_report);
-    char *buf;
-    int len;
+	const uint size = sizeof(struct razer_report);
+	char *buf;
+	int len;
 
-    buf = kmemdup(report, size, GFP_KERNEL);
-    if (buf == NULL) {
-        return -ENOMEM;
-    }
+	buf = kmemdup(report, size, GFP_KERNEL);
+	if (buf == NULL) {
+		return -ENOMEM;
+	}
 
-    len = usb_control_msg(razer_dev->usb_dev,
-            usb_sndctrlpipe(razer_dev->usb_dev, 0),
-            HID_REQ_SET_REPORT,                                 // Request
-            USB_TYPE_CLASS | USB_RECIP_INTERFACE | USB_DIR_OUT, // RequestType
-            0x300,                                              // Value
-            razer_dev->report_index,                            // Index
-            buf,                                                // Data
-            size,                                               // Length
-            USB_CTRL_SET_TIMEOUT);
+	len = usb_control_msg(razer_dev->usb_dev,
+			usb_sndctrlpipe(razer_dev->usb_dev, 0),
+			HID_REQ_SET_REPORT,                                 // Request
+			USB_TYPE_CLASS | USB_RECIP_INTERFACE | USB_DIR_OUT, // RequestType
+			0x300,                                              // Value
+			razer_dev->report_index,                            // Index
+			buf,                                                // Data
+			size,                                               // Length
+			USB_CTRL_SET_TIMEOUT);
 
-    usleep_range(600, 800);
+	usleep_range(600, 800);
 
-    kfree(buf);
+	kfree(buf);
 
-    return ((len < 0) ? len : ((len != size) ? -EIO : 0));
+	return ((len < 0) ? len : ((len != size) ? -EIO : 0));
 }
 
-int razer_send(struct razer_device *razer_dev, struct razer_report* report)
+int razer_send(struct razer_device *razer_dev, struct razer_report *report)
 {
-    int retval;
+	int retval;
 
-    mutex_lock(&razer_dev->lock);
-    retval = _razer_send(razer_dev, report);
-    mutex_unlock(&razer_dev->lock);
+	mutex_lock(&razer_dev->lock);
+	retval = _razer_send(razer_dev, report);
+	mutex_unlock(&razer_dev->lock);
 
-    return retval;
+	return retval;
 }
-
 EXPORT_SYMBOL_GPL(razer_send);
 
 
@@ -131,39 +129,38 @@ EXPORT_SYMBOL_GPL(razer_send);
  * Get a response from the razer device.
  * Returns 0 on success.
  */
-int _razer_receive(struct razer_device *razer_dev, struct razer_report* report)
+int _razer_receive(struct razer_device *razer_dev, struct razer_report *report)
 {
-    const uint size = sizeof(struct razer_report);
-    int len;
+	const uint size = sizeof(struct razer_report);
+	int len;
 
-    memset(report, 0, size);
+	memset(report, 0, size);
 
-    len = usb_control_msg(razer_dev->usb_dev,
-            usb_rcvctrlpipe(razer_dev->usb_dev, 0),
-            HID_REQ_GET_REPORT,                                   // Request
-            USB_TYPE_CLASS | USB_RECIP_INTERFACE | USB_DIR_IN,    // RequestType
-            0x300,                                                // Value
-            razer_dev->report_index,                              // Index
-            report,                                               // Data
-            size,
-            USB_CTRL_SET_TIMEOUT);
+	len = usb_control_msg(razer_dev->usb_dev,
+			usb_rcvctrlpipe(razer_dev->usb_dev, 0),
+			HID_REQ_GET_REPORT,                                   // Request
+			USB_TYPE_CLASS | USB_RECIP_INTERFACE | USB_DIR_IN,    // RequestType
+			0x300,                                                // Value
+			razer_dev->report_index,                              // Index
+			report,                                               // Data
+			size,
+			USB_CTRL_SET_TIMEOUT);
 
-    usleep_range(600, 800);
+	usleep_range(600, 800);
 
-    return ((len < 0) ? len : ((len != size) ? -EIO : 0));
+	return ((len < 0) ? len : ((len != size) ? -EIO : 0));
 }
 
-int razer_receive(struct razer_device *razer_dev, struct razer_report* report)
+int razer_receive(struct razer_device *razer_dev, struct razer_report *report)
 {
-    int retval;
+	int retval;
 
-    mutex_lock(&razer_dev->lock);
-    retval = _razer_receive(razer_dev, report);
-    mutex_unlock(&razer_dev->lock);
+	mutex_lock(&razer_dev->lock);
+	retval = _razer_receive(razer_dev, report);
+	mutex_unlock(&razer_dev->lock);
 
-    return retval;
+	return retval;
 }
-
 EXPORT_SYMBOL_GPL(razer_receive);
 
 
@@ -173,79 +170,79 @@ EXPORT_SYMBOL_GPL(razer_receive);
  * Returns 0 on success.
  */
 int _razer_send_with_response(struct razer_device *razer_dev,
-    struct razer_report* request_report, struct razer_report* response_report)
+	struct razer_report *request_report, struct razer_report *response_report)
 {
-    int retval, r;
+	int retval, r;
 
-    retval = _razer_send(razer_dev, request_report);
-    if (retval != 0) {
-        return retval;
-    }
+	retval = _razer_send(razer_dev, request_report);
+	if (retval != 0) {
+		return retval;
+	}
 
-    // Retry 40 times when busy -> 125 milliseconds -> max 5 seconds wait
-    for (r=0; r < 40; r++) {
-        retval = _razer_receive(razer_dev, response_report);
-        if (retval != 0) {
-            return retval;
-        }
+	// Retry 40 times when busy -> 125 milliseconds -> max 5 seconds wait
+	for (r=0; r < 40; r++) {
+		retval = _razer_receive(razer_dev, response_report);
+		if (retval != 0) {
+			return retval;
+		}
 
-        if (response_report->command_class != request_report->command_class ||
-                response_report->command_id != request_report->command_id)
-        {
-            dev_err(&razer_dev->usb_dev->dev,
-                    "razer_send_with_response: "
-                    "response commands do not match: "
-                    "Request Class: %d "
-                    "Request ID: %d "
-                    "Response Class: %d "
-                    "Response ID: %d\n",
-                    request_report->command_class,
-                    request_report->command_id,
-                    response_report->command_class,
-                    response_report->command_id);
-            return -EINVAL;
-        }
+		if (response_report->command_class != request_report->command_class ||
+			response_report->command_id != request_report->command_id)
+		{
+			dev_err(&razer_dev->usb_dev->dev,
+					"razer_send_with_response: "
+					"response commands do not match: "
+					"Request Class: %d "
+					"Request ID: %d "
+					"Response Class: %d "
+					"Response ID: %d\n",
+					request_report->command_class,
+					request_report->command_id,
+					response_report->command_class,
+					response_report->command_id);
+			return -EINVAL;
+		}
 
-        switch (response_report->status) {
-        case RAZER_STATUS_SUCCESS:
-            return 0;
+		switch (response_report->status) {
+		case RAZER_STATUS_SUCCESS:
+			return 0;
 
-        case RAZER_STATUS_BUSY:
-            msleep(125);
-            continue;
+		case RAZER_STATUS_BUSY:
+			msleep(125);
+			continue;
 
-        case RAZER_STATUS_FAILURE:
-        case RAZER_STATUS_TIMEOUT:
-        case RAZER_STATUS_NOT_SUPPORTED:
-            return -EINVAL;
+		case RAZER_STATUS_FAILURE:
+		case RAZER_STATUS_TIMEOUT:
+		case RAZER_STATUS_NOT_SUPPORTED:
+			return -EINVAL;
 
-        default:
-            dev_err(&razer_dev->usb_dev->dev,
-                    "razer_send_with_response: "
-                    "unknown response status 0x%x\n",
-                    response_report->status);
-            return -EINVAL;
-        }
-    }
+		default:
+			dev_err(&razer_dev->usb_dev->dev,
+					"razer_send_with_response: "
+					"unknown response status 0x%x\n",
+					response_report->status);
+			return -EINVAL;
+		}
+	}
 
-    dev_err(&razer_dev->usb_dev->dev,
-            "razer_send_with_response: request failed: device is busy\n");
+	dev_err(&razer_dev->usb_dev->dev, "razer_send_with_response: "
+			"request failed: device is busy\n");
 
-    return -EBUSY;
+	return -EBUSY;
 }
 
 int razer_send_with_response(struct razer_device *razer_dev,
-    struct razer_report* request_report, struct razer_report* response_report)
+	struct razer_report *request_report, struct razer_report *response_report)
 {
-    int retval;
+	int retval;
 
-    mutex_lock(&razer_dev->lock);
-    retval = _razer_send_with_response(razer_dev, request_report, response_report);
-    mutex_unlock(&razer_dev->lock);
+	mutex_lock(&razer_dev->lock);
+	retval = _razer_send_with_response(razer_dev,
+			request_report, response_report);
+	mutex_unlock(&razer_dev->lock);
 
-    return retval;
+	return retval;
 }
-
 EXPORT_SYMBOL_GPL(razer_send_with_response);
 
 
@@ -255,13 +252,13 @@ EXPORT_SYMBOL_GPL(razer_send_with_response);
  * Returns 0 on success.
  */
 int razer_send_check_response(struct razer_device *razer_dev,
-    struct razer_report* request_report)
+	struct razer_report* request_report)
 {
-    struct razer_report response_report;
+	struct razer_report response_report;
 
-    return razer_send_with_response(razer_dev, request_report, &response_report);
+	return razer_send_with_response(razer_dev,
+			request_report, &response_report);
 }
-
 EXPORT_SYMBOL_GPL(razer_send_check_response);
 
 
@@ -275,19 +272,18 @@ EXPORT_SYMBOL_GPL(razer_send_check_response);
  */
 unsigned char razer_calculate_crc(struct razer_report *report)
 {
-    // Second to last byte of report is a simple checksum.
-    // Just xor all bytes up with overflow and you are done.
-    unsigned char crc = 0;
-    unsigned char *_report = (unsigned char*)report;
+	// Second to last byte of report is a simple checksum.
+	// Just xor all bytes up with overflow and you are done.
+	unsigned char crc = 0;
+	unsigned char *_report = (unsigned char*)report;
+	unsigned int i;
 
-    unsigned int i;
-    for(i = 2; i < 88; i++) {
-        crc ^= _report[i];
-    }
+	for(i = 2; i < 88; i++) {
+		crc ^= _report[i];
+	}
 
-    return crc;
+	return crc;
 }
-
 EXPORT_SYMBOL_GPL(razer_calculate_crc);
 
 
@@ -295,20 +291,22 @@ EXPORT_SYMBOL_GPL(razer_calculate_crc);
 /*
  * Detailed error print
  */
-void razer_print_err_report(struct razer_report* report, char* driver_name, char* message)
+void razer_print_err_report(struct razer_report *report,
+	char *driver_name, char *message)
 {
-    printk(KERN_WARNING "%s: %s. Status: %02x Transaction ID: %02x Data Size: %02x Command Class: %02x Command ID: %02x Params: %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n",
-        driver_name,
-        message,
-        report->status,
-        report->transaction_id,
-        report->data_size,
-        report->command_class,
-        report->command_id,
-        report->arguments[0], report->arguments[1], report->arguments[2],
-        report->arguments[3], report->arguments[4], report->arguments[5],
-        report->arguments[6], report->arguments[7], report->arguments[8],
-        report->arguments[9]);
+	printk(KERN_WARNING "%s: %s. Status: %02x Transaction ID: %02x"
+		" Data Size: %02x Command Class: %02x Command ID: %02x"
+		" Params: %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n",
+		driver_name,
+		message,
+		report->status,
+		report->transaction_id,
+		report->data_size,
+		report->command_class,
+		report->command_id,
+		report->arguments[0], report->arguments[1], report->arguments[2],
+		report->arguments[3], report->arguments[4], report->arguments[5],
+		report->arguments[6], report->arguments[7], report->arguments[8],
+		report->arguments[9]);
 }
-
 EXPORT_SYMBOL_GPL(razer_print_err_report);
