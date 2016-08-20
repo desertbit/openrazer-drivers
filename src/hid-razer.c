@@ -191,14 +191,11 @@ int razer_get_rows(struct usb_device *usb_dev)
 {
 	if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016) {
 		return RAZER_STEALTH_2016_ROWS;
-	}
-	else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_14_2016) {
+	} else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_14_2016) {
 		return RAZER_BLADE_14_2016_ROWS;
-	}
-	else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
+	} else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
 		return RAZER_BLACKWIDOW_CHROMA_ROWS;
-	}
-	else {
+	} else {
 		return -EINVAL;
 	}
 }
@@ -209,14 +206,11 @@ int razer_get_columns(struct usb_device *usb_dev)
 {
 	if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016) {
 		return RAZER_STEALTH_2016_COLUMNS;
-	}
-	else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_14_2016) {
+	} else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_14_2016) {
 		return RAZER_BLADE_14_2016_COLUMNS;
-	}
-	else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
+	} else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
 		return RAZER_BLACKWIDOW_CHROMA_COLUMNS;
-	}
-	else {
+	} else {
 		return -EINVAL;
 	}
 }
@@ -292,9 +286,9 @@ int razer_set_key_colors(struct razer_device *razer_dev,
 		return -EINVAL;
 	}
 
-	for(i = 0; i < rows; i++) {
+	for (i = 0; i < rows; i++) {
 		retval = razer_set_key_row(razer_dev, i,
-					(unsigned char*)&row_cols[i*columns*3],
+					(unsigned char *)&row_cols[i*columns*3],
 					columns * 3);
 		if (retval != 0) {
 			printk(KERN_WARNING "hid-razer: set_key_colors: "
@@ -482,15 +476,13 @@ int razer_set_starlight_mode(struct razer_device *razer_dev,
 	if (color1 == NULL && color2 == NULL) {
 		report.arguments[1] = 0x03;         // Starlight effect type: random colors
 		report.data_size    = 0x03;
-	}
-	else if (color1 != NULL && color2 == NULL) {
+	} else if (color1 != NULL && color2 == NULL) {
 		report.arguments[1] = 0x01;         // Starlight effect type: one color
 		report.arguments[3] = color1->r;
 		report.arguments[4] = color1->g;
 		report.arguments[5] = color1->b;
 		report.data_size    = 0x06;
-	}
-	else if (color1 != NULL && color2 != NULL) {
+	} else if (color1 != NULL && color2 != NULL) {
 		report.arguments[1] = 0x02;         // Starlight effect type: two colors
 		report.arguments[3] = color1->r;
 		report.arguments[4] = color1->g;
@@ -532,15 +524,13 @@ int razer_set_breath_mode(struct razer_device *razer_dev,
 	if (color1 == NULL && color2 == NULL) {
 		report.arguments[1] = 0x03;         // Breath effect type: random colors
 		report.data_size    = 0x02;
-	}
-	else if (color1 != NULL && color2 == NULL) {
+	} else if (color1 != NULL && color2 == NULL) {
 		report.arguments[1] = 0x01;         // Breath effect type: one color
 		report.arguments[2] = color1->r;
 		report.arguments[3] = color1->g;
 		report.arguments[4] = color1->b;
 		report.data_size    = 0x05;
-	}
-	else if (color1 != NULL && color2 != NULL) {
+	} else if (color1 != NULL && color2 != NULL) {
 		report.arguments[1] = 0x02;         // Breath effect type: two colors
 		report.arguments[2] = color1->r;
 		report.arguments[3] = color1->g;
@@ -657,8 +647,7 @@ static ssize_t razer_attr_read_device_type(struct device *dev,
 
 	char *device_type;
 
-	switch (usb_dev->descriptor.idProduct)
-	{
+	switch (usb_dev->descriptor.idProduct) {
 		case USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016:
 			device_type = "Razer Blade Stealth 2016\n";
 			break;
@@ -788,7 +777,7 @@ static ssize_t razer_attr_write_set_key_colors(struct device *dev,
 	struct razer_device *razer_dev = dev_get_drvdata(dev);
 	int retval;
 
-	retval = razer_set_key_colors(razer_dev, (unsigned char*)&buf[0], count);
+	retval = razer_set_key_colors(razer_dev, (unsigned char *)&buf[0], count);
 	if (retval != 0) {
 		return retval;
 	}
@@ -839,7 +828,7 @@ static ssize_t razer_attr_write_mode_static(struct device *dev,
 		return -EINVAL;
 	}
 
-	retval = razer_set_static_mode(razer_dev, (struct razer_rgb*)&buf[0]);
+	retval = razer_set_static_mode(razer_dev, (struct razer_rgb *)&buf[0]);
 	if (retval != 0) {
 		return retval;
 	}
@@ -933,7 +922,7 @@ static ssize_t razer_attr_write_mode_reactive(struct device *dev,
 
 	retval = razer_set_reactive_mode(razer_dev,
 				(unsigned char)buf[0],
-				(struct razer_rgb*)&buf[1]);
+				(struct razer_rgb *)&buf[1]);
 	if (retval != 0) {
 		return retval;
 	}
@@ -958,8 +947,8 @@ static ssize_t razer_attr_write_mode_starlight(struct device *dev,
 	struct device_attribute *attr, const char *buf, size_t count)
 {
 	struct razer_device *razer_dev  = dev_get_drvdata(dev);
-	struct razer_rgb* color1        = NULL;
-	struct razer_rgb* color2        = NULL;
+	struct razer_rgb *color1        = NULL;
+	struct razer_rgb *color2        = NULL;
 	int retval;
 
 	if (count < 1) {
@@ -970,12 +959,11 @@ static ssize_t razer_attr_write_mode_starlight(struct device *dev,
 
 	if (count == 4) {
 		// Single color mode
-		color1 = (struct razer_rgb*)&buf[1];
-	}
-	else if (count == 7) {
+		color1 = (struct razer_rgb *)&buf[1];
+	} else if (count == 7) {
 		// Dual color mode
-		color1 = (struct razer_rgb*)&buf[1];
-		color2 = (struct razer_rgb*)&buf[4];
+		color1 = (struct razer_rgb *)&buf[1];
+		color2 = (struct razer_rgb *)&buf[4];
 	}
 
 	retval = razer_set_starlight_mode(razer_dev, (unsigned char)buf[0],
@@ -1000,18 +988,17 @@ static ssize_t razer_attr_write_mode_breath(struct device *dev,
 	struct device_attribute *attr, const char *buf, size_t count)
 {
 	struct razer_device *razer_dev  = dev_get_drvdata(dev);
-	struct razer_rgb* color1        = NULL;
-	struct razer_rgb* color2        = NULL;
+	struct razer_rgb *color1        = NULL;
+	struct razer_rgb *color2        = NULL;
 	int retval;
 
 	if (count == 3) {
 		// Single color mode
-		color1 = (struct razer_rgb*)&buf[0];
-	}
-	else if (count == 6) {
+		color1 = (struct razer_rgb *)&buf[0];
+	} else if (count == 6) {
 		// Dual color mode
-		color1 = (struct razer_rgb*)&buf[0];
-		color2 = (struct razer_rgb*)&buf[3];
+		color1 = (struct razer_rgb *)&buf[0];
+		color2 = (struct razer_rgb *)&buf[3];
 	}
 
 	retval = razer_set_breath_mode(razer_dev, color1, color2);
@@ -1168,8 +1155,7 @@ static int razer_probe(struct hid_device *hdev,
 
 	// Custom files depending on the device support.
 	if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016 ||
-		usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_14_2016)
-	{
+		usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_14_2016) {
 		// Set the default fn mode state.
 		data->fn_mode_state = 1;
 
@@ -1214,9 +1200,7 @@ static int razer_probe(struct hid_device *hdev,
 		retval = device_create_file(dev, &dev_attr_mode_starlight);
 		if (retval)
 			goto exit_free;
-	}
-	else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA)
-	{
+	} else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
 		// Enable the macro keys state.
 		data->macro_keys_state = 1;
 
@@ -1302,8 +1286,7 @@ static void razer_disconnect(struct hid_device *hdev)
 
 	// Custom files depending on the device support.
 	if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016 ||
-		usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_14_2016)
-	{
+		usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_14_2016) {
 		device_remove_file(dev, &dev_attr_fn_mode);
 		device_remove_file(dev, &dev_attr_get_key_rows);
 		device_remove_file(dev, &dev_attr_get_key_columns);
@@ -1319,9 +1302,7 @@ static void razer_disconnect(struct hid_device *hdev)
 		device_remove_file(dev, &dev_attr_mode_reactive);
 		device_remove_file(dev, &dev_attr_mode_breath);
 		device_remove_file(dev, &dev_attr_mode_starlight);
-	}
-	else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA)
-	{
+	} else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
 		device_remove_file(dev, &dev_attr_get_key_rows);
 		device_remove_file(dev, &dev_attr_get_key_columns);
 		device_remove_file(dev, &dev_attr_set_key_colors);

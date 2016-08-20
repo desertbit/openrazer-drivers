@@ -180,15 +180,14 @@ int _razer_send_with_response(struct razer_device *razer_dev,
 	}
 
 	// Retry 40 times when busy -> 125 milliseconds -> max 5 seconds wait
-	for (r=0; r < 40; r++) {
+	for (r = 0; r < 40; r++) {
 		retval = _razer_receive(razer_dev, response_report);
 		if (retval != 0) {
 			return retval;
 		}
 
 		if (response_report->command_class != request_report->command_class ||
-			response_report->command_id != request_report->command_id)
-		{
+			response_report->command_id != request_report->command_id) {
 			dev_err(&razer_dev->usb_dev->dev,
 					"razer_send_with_response: "
 					"response commands do not match: "
@@ -252,7 +251,7 @@ EXPORT_SYMBOL_GPL(razer_send_with_response);
  * Returns 0 on success.
  */
 int razer_send_check_response(struct razer_device *razer_dev,
-	struct razer_report* request_report)
+	struct razer_report *request_report)
 {
 	struct razer_report response_report;
 
@@ -275,10 +274,10 @@ unsigned char razer_calculate_crc(struct razer_report *report)
 	// Second to last byte of report is a simple checksum.
 	// Just xor all bytes up with overflow and you are done.
 	unsigned char crc = 0;
-	unsigned char *_report = (unsigned char*)report;
+	unsigned char *_report = (unsigned char *)report;
 	unsigned int i;
 
-	for(i = 2; i < 88; i++) {
+	for (i = 2; i < 88; i++) {
 		crc ^= _report[i];
 	}
 
