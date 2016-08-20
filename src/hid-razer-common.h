@@ -20,8 +20,6 @@
 #include <linux/usb.h>
 #include <linux/types.h>
 
-
-
 //#############//
 //### Types ###//
 //#############//
@@ -70,14 +68,12 @@ struct razer_report {
 	unsigned char   reserved;
 };
 
-
-
 //#################//
 //### Functions ###//
 //#################//
 
 int razer_init_device(struct razer_device *razer_dev,
-	struct usb_device *usb_dev);
+		      struct usb_device *usb_dev);
 
 struct razer_report razer_new_report(void);
 
@@ -86,16 +82,15 @@ int razer_send(struct razer_device *razer_dev, struct razer_report *report);
 int razer_receive(struct razer_device *razer_dev, struct razer_report *report);
 
 int razer_send_with_response(struct razer_device *razer_dev,
-	struct razer_report *request_report,
-	struct razer_report *response_report);
+			     struct razer_report *request_report,
+			     struct razer_report *response_report);
 
 int razer_send_check_response(struct razer_device *razer_dev,
-	struct razer_report *request_report);
+			      struct razer_report *request_report);
 
 unsigned char razer_calculate_crc(struct razer_report *report);
 
 void razer_print_err_report(struct razer_report *report,
-	char *driver_name, char *message);
-
+			    char *driver_name, char *message);
 
 #endif // __HID_RAZER_COMMON_H

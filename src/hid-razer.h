@@ -19,8 +19,6 @@
 
 #include <linux/types.h>
 
-
-
 //#################//
 //### Constants ###//
 //#################//
@@ -37,8 +35,6 @@
 
 #define RAZER_BLACKWIDOW_CHROMA_ROWS    0x06
 #define RAZER_BLACKWIDOW_CHROMA_COLUMNS 0x16
-
-
 
 //#############//
 //### Types ###//
