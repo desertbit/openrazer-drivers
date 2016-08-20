@@ -83,7 +83,7 @@ int razer_get_brightness(struct razer_device *razer_dev)
 	struct razer_report request_report  = razer_new_report();
 	struct razer_report response_report;
 	int response_value_index            = 1;
-	const unsigned char productID       = usb_dev->descriptor.idProduct;
+	const unsigned int productID        = usb_dev->descriptor.idProduct;
 
 	request_report.command_class = 0x0E;
 	request_report.command_id    = 0x84;
@@ -119,7 +119,7 @@ int razer_set_brightness(struct razer_device *razer_dev,
 	int retval;
 	struct usb_device *usb_dev    = razer_dev->usb_dev;
 	struct razer_report report    = razer_new_report();
-	const unsigned char productID = usb_dev->descriptor.idProduct;
+	const unsigned int productID  = usb_dev->descriptor.idProduct;
 
 	report.command_class = 0x0E;
 	report.command_id    = 0x04;
@@ -214,7 +214,7 @@ int razer_set_fn_mode(struct razer_device *razer_dev, unsigned char state)
 // On error a value smaller than 0 is returned.
 int razer_get_rows(struct usb_device *usb_dev)
 {
-	const unsigned char productID = usb_dev->descriptor.idProduct;
+	const unsigned int productID = usb_dev->descriptor.idProduct;
 
 	if (productID == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016) {
 		return RAZER_STEALTH_2016_ROWS;
@@ -231,7 +231,7 @@ int razer_get_rows(struct usb_device *usb_dev)
 // On error a value smaller than 0 is returned.
 int razer_get_columns(struct usb_device *usb_dev)
 {
-	const unsigned char productID = usb_dev->descriptor.idProduct;
+	const unsigned int productID = usb_dev->descriptor.idProduct;
 
 	if (productID == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016) {
 		return RAZER_STEALTH_2016_COLUMNS;
@@ -1185,7 +1185,7 @@ static int razer_probe(struct hid_device *hdev,
 	struct usb_device *usb_dev      = interface_to_usbdev(intf);
 	struct razer_device *razer_dev;
 	struct razer_data *data;
-	const unsigned char productID   = usb_dev->descriptor.idProduct;
+	const unsigned int productID    = usb_dev->descriptor.idProduct;
 
 	razer_dev = kzalloc(sizeof(struct razer_device), GFP_KERNEL);
 	if (!razer_dev) {
@@ -1355,7 +1355,7 @@ static void razer_disconnect(struct hid_device *hdev)
 	struct usb_device *usb_dev      = interface_to_usbdev(intf);
 	struct razer_device *razer_dev  = dev_get_drvdata(dev);
 	struct razer_data *data         = razer_dev->data;
-	const unsigned char productID   = usb_dev->descriptor.idProduct;
+	const unsigned int productID    = usb_dev->descriptor.idProduct;
 
 	// Remove the default files
 	device_remove_file(dev, &dev_attr_get_firmware_version);
