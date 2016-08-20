@@ -39,30 +39,9 @@ This requires recompilation on every kernel update.
 ```
 
 
-## Driver Device Files
+## Driver Documentation
 
-Device files created by the driver in `/sys/bus/hid/drivers/hid-razer/${ID}`
-
-
-| FILE                 | ACCESS | OPTIONAL | DESCRIPTION                                                                         |
-|:---------------------|:------:|:--------:|:------------------------------------------------------------------------------------|
-| device_type          |   r    |          | Returns a friendly device type string.                                              |
-| get_serial           |   r    |          | Gets the serial number from the device.                                             |
-| get_firmware_version |   r    |          | Gets the firmware version from the device.                                          |
-| brightness           |   rw   |    x     | Returns the brightness value from 0-255 or sets the brightness to the ASCII number. |
-| fn_mode              |   rw   |    x     | Returns the current fn mode or sets the FN mode to the ASCII number.                |
-| set_logo             |   w    |    x     | Sets the logo lighting state to the ASCII number written to this file.              |
-| set_key_colors       |   w    |    x     | Writes the color rows on the keyboard. Takes in all the colors for the keyboard.    |
-| get_key_rows         |   r    |    x     | Returns the amount of key rows.                                                     |
-| get_key_columns      |   r    |    x     | Returns the amount of key columns.                                                  |
-| mode_none            |   w    |    x     |                                                                                     |
-| mode_static          |   w    |    x     |                                                                                     |
-| mode_custom          |   w    |    x     |                                                                                     |
-| mode_wave            |   w    |    x     |                                                                                     |
-| mode_spectrum        |   w    |    x     |                                                                                     |
-| mode_reactive        |   w    |    x     |                                                                                     |
-| mode_starlight       |   w    |    x     |                                                                                     |
-| mode_breath          |   w    |    x     |                                                                                     |
+The driver documentation can be found **[here](Documentation/sysfs-driver-hid-razer)**.
 
 
 ## TODO

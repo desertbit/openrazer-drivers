@@ -689,6 +689,8 @@ static ssize_t razer_attr_write_brightness(struct device *dev,
 /**
  * Write device file "set_logo"
  * Sets the logo lighting state to the ASCII number written to this file.
+ * 0 = off
+ * 1 = on
  */
 static ssize_t razer_attr_write_set_logo(struct device *dev,
     struct device_attribute *attr, const char *buf, size_t count)
@@ -747,7 +749,7 @@ static ssize_t razer_attr_read_fn_mode(struct device *dev,
 
 /*
  * Write device file "set_key_colors"
- * Writes the color rows on the keyboard. Takes in all the colors for the keyboard.
+ * Set the colors of all keys of the keyboard. 3 bytes per color.
  */
 static ssize_t razer_attr_write_set_key_colors(struct device *dev,
     struct device_attribute *attr, const char *buf, size_t count)
@@ -914,7 +916,7 @@ static ssize_t razer_attr_write_mode_reactive(struct device *dev,
  * Starlight mode has 3 modes of operation:
  *   Mode 1: single color. 3 RGB bytes.
  *   Mode 2: two colors. 6 RGB bytes.
- *   Mode 3: random colors.
+ *   Mode 3: random colors. Anything else passed.
  */
 static ssize_t razer_attr_write_mode_starlight(struct device *dev,
     struct device_attribute *attr, const char *buf, size_t count)
