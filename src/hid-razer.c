@@ -14,6 +14,8 @@
  * GNU General Public License for more details.
  */
 
+#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+
 #include <linux/kernel.h>
 #include <linux/slab.h>
 #include <linux/module.h>
@@ -135,8 +137,8 @@ int razer_set_logo(struct razer_device *razer_dev, unsigned char state)
 	struct razer_report report = razer_new_report(0x03, 0x00, 0x03);
 
 	if (state != 0 && state != 1) {
-		printk(KERN_WARNING "hid-razer: set_logo: logo lighting state "
-			"must be either 0 or 1: got: %d\n", state);
+		pr_warn("set_logo: logo lighting state must be either 0 or 1: "
+			"got: %d\n", state);
 		return -EINVAL;
 	}
 
@@ -163,8 +165,7 @@ int razer_set_fn_mode(struct razer_device *razer_dev, unsigned char state)
 	struct razer_report report  = razer_new_report(0x02, 0x06, 0x02);
 
 	if (state != 0 && state != 1) {
-		printk(KERN_WARNING "hid-razer: fn_mode: must be "
-			"either 0 or 1: got: %d\n", state);
+		pr_warn("fn_mode: must be either 0 or 1: got: %d\n", state);
 		return -EINVAL;
 	}
 
@@ -226,21 +227,18 @@ int razer_set_key_row(struct razer_device *razer_dev,
 	struct razer_report report      = razer_new_report(0x03, 0x0B, 0x00); // Set the data_size later.
 
 	if (rows < 0 || columns < 0) {
-		printk(KERN_WARNING "hid-razer: set_key_row: "
-			"unsupported device\n");
+		pr_warn("set_key_row: unsupported device\n");
 		return -EINVAL;
 	}
 
 	// Validate the input.
 	if (row_index >= rows) {
-		printk(KERN_WARNING "hid-razer: set_key_row: "
-			"invalid row index: %d\n", row_index);
+		pr_warn("set_key_row: invalid row index: %d\n", row_index);
 		return -EINVAL;
 	}
 	if (row_cols_len != row_cols_required_len) {
-		printk(KERN_WARNING "hid-razer: set_key_row: "
-			"wrong amount of RGB data provided: %lu of %lu\n",
-			row_cols_len, row_cols_required_len);
+		pr_warn("set_key_row: wrong amount of RGB data provided: "
+			"%lu of %lu\n", row_cols_len, row_cols_required_len);
 		return -EINVAL;
 	}
 
@@ -273,16 +271,14 @@ int razer_set_key_colors(struct razer_device *razer_dev,
 	size_t row_cols_required_len    = columns * 3 * rows;
 
 	if (columns < 0 || rows < 0 || row_cols_required_len < 0) {
-		printk(KERN_WARNING "hid-razer: set_key_colors: "
-			"unsupported device\n");
+		pr_warn("set_key_colors: unsupported device\n");
 		return -EINVAL;
 	}
 
 	// Validate the input.
 	if (row_cols_len != row_cols_required_len) {
-		printk(KERN_WARNING "hid-razer: set_key_colors: "
-			"wrong amount of RGB data provided: %lu of %lu\n",
-			row_cols_len, row_cols_required_len);
+		pr_warn("set_key_colors: wrong amount of RGB data provided: "
+			"%lu of %lu\n", row_cols_len, row_cols_required_len);
 		return -EINVAL;
 	}
 
@@ -291,8 +287,8 @@ int razer_set_key_colors(struct razer_device *razer_dev,
 					(unsigned char *)&row_cols[i*columns*3],
 					columns * 3);
 		if (retval != 0) {
-			printk(KERN_WARNING "hid-razer: set_key_colors: "
-				"failed to set colors for row: %d\n", i);
+			pr_warn("set_key_colors: failed to set colors for row: "
+				"%d\n", i);
 			return retval;
 		}
 	}
@@ -386,8 +382,8 @@ int razer_set_wave_mode(struct razer_device *razer_dev,
 	struct razer_report report = razer_new_report(0x03, 0x0A, 0x02);
 
 	if (direction != 1 && direction != 2) {
-		printk(KERN_WARNING "hid-razer: wave_mode: "
-			"wave direction must be 1 or 2: got: %d\n", direction);
+		pr_warn("wave_mode: wave direction must be 1 or 2: got: %d\n",
+			direction);
 		return -EINVAL;
 	}
 
@@ -431,8 +427,8 @@ int razer_set_reactive_mode(struct razer_device *razer_dev,
 	struct razer_report report = razer_new_report(0x03, 0x0A, 0x05);
 
 	if (speed <= 0 || speed >= 4) {
-		printk(KERN_WARNING "hid-razer: reactive_mode: "
-			"speed must be within 1-3: got: %d\n", speed);
+		pr_warn("reactive_mode: speed must be within 1-3: got: %d\n",
+			speed);
 		return -EINVAL;
 	}
 
@@ -465,8 +461,8 @@ int razer_set_starlight_mode(struct razer_device *razer_dev,
 	struct razer_report report = razer_new_report(0x03, 0x0A, 0x00); // Data size initial to 0
 
 	if (speed <= 0 || speed >= 4) {
-		printk(KERN_WARNING "hid-razer: starlight_mode: "
-			"speed must be within 1-3: got: %d\n", speed);
+		pr_warn("starlight_mode: speed must be within 1-3: got: %d\n",
+			speed);
 		return -EINVAL;
 	}
 
@@ -492,8 +488,7 @@ int razer_set_starlight_mode(struct razer_device *razer_dev,
 		report.arguments[8] = color2->b;
 		report.data_size    = 0x09;
 	} else {
-		printk(KERN_WARNING "hid-razer: starlight_mode: "
-			"invalid colors set\n");
+		pr_warn("starlight_mode: invalid colors set\n");
 		return -EINVAL;
 	}
 
@@ -540,8 +535,7 @@ int razer_set_breath_mode(struct razer_device *razer_dev,
 		report.arguments[7] = color2->b;
 		report.data_size    = 0x08;
 	} else {
-		printk(KERN_WARNING "hid-razer: breath_mode: "
-			"invalid colors set\n");
+		pr_warn("breath_mode: invalid colors set\n");
 		return -EINVAL;
 	}
 
@@ -698,8 +692,7 @@ static ssize_t razer_attr_write_brightness(struct device *dev,
 
 	retval = kstrtoul(buf, 10, &temp);
 	if (retval != 0) {
-		printk(KERN_WARNING "hid-razer: set brightness "
-			"requires an ASCII number\n");
+		pr_warn("set brightness requires an ASCII number\n");
 		return retval;
 	}
 
@@ -728,8 +721,7 @@ static ssize_t razer_attr_write_set_logo(struct device *dev,
 
 	retval = kstrtoul(buf, 10, &temp);
 	if (retval != 0) {
-		printk(KERN_WARNING "hid-razer: set_logo: "
-			"requires an ASCII number\n");
+		pr_warn("set_logo: requires an ASCII number\n");
 		return retval;
 	}
 
@@ -758,8 +750,7 @@ static ssize_t razer_attr_write_fn_mode(struct device *dev,
 
 	retval = kstrtoul(buf, 10, &temp);
 	if (retval != 0) {
-		printk(KERN_WARNING "hid-razer: set fn_mode "
-			"requires an ASCII number\n");
+		pr_warn("set fn_mode requires an ASCII number\n");
 		return retval;
 	}
 
@@ -844,8 +835,7 @@ static ssize_t razer_attr_write_mode_static(struct device *dev,
 	int retval;
 
 	if (count != 3) {
-		printk(KERN_WARNING "hid-razer: "
-			"mode static requires 3 RGB bytes\n");
+		pr_warn("mode static requires 3 RGB bytes\n");
 		return -EINVAL;
 	}
 
@@ -894,8 +884,7 @@ static ssize_t razer_attr_write_mode_wave(struct device *dev,
 
 	retval = kstrtoul(buf, 10, &temp);
 	if (retval != 0) {
-		printk(KERN_WARNING "hid-razer: mode_wave: "
-			"requires an ASCII number\n");
+		pr_warn("mode_wave: requires an ASCII number\n");
 		return retval;
 	}
 
@@ -943,8 +932,7 @@ static ssize_t razer_attr_write_mode_reactive(struct device *dev,
 	int retval;
 
 	if (count != 4) {
-		printk(KERN_WARNING "hid-razer: mode reactive "
-			"requires one speed byte followed by 3 RGB bytes\n");
+		pr_warn("mode reactive requires one speed byte followed by 3 RGB bytes\n");
 		return -EINVAL;
 	}
 
@@ -980,8 +968,7 @@ static ssize_t razer_attr_write_mode_starlight(struct device *dev,
 	int retval;
 
 	if (count < 1) {
-		printk(KERN_WARNING "hid-razer: mode starlight "
-			"requires one speed byte\n");
+		pr_warn("mode starlight requires one speed byte\n");
 		return -EINVAL;
 	}
 
