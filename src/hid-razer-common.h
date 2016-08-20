@@ -55,7 +55,7 @@ struct razer_device {
     struct  usb_device  *usb_dev;
     struct  mutex       lock;
     uint                report_index;   // The report index to use.
-    void                *data;          // Custom data which can be used.             
+    void                *data;          // Optional xustom data.
 };
 
 struct razer_rgb {

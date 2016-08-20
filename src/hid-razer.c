@@ -445,13 +445,14 @@ int razer_set_starlight_mode(struct razer_device *razer_dev,
 {
     int retval;
     struct razer_report report = razer_new_report(0x03, 0x0A, 0x00); // Data size initial to 0
-    report.arguments[0] = 0x19; // Effect ID
-    report.arguments[2] = 0x01; // Speed
 
     if (speed <= 0 || speed >= 4) {
         printk(KERN_WARNING "hid-razer: starlight_mode: speed must be within 1-3: got: %d\n", speed);
         return -EINVAL;
     }
+
+    report.arguments[0] = 0x19;     // Effect ID
+    report.arguments[2] = speed;    // Speed
 
     if (color1 == NULL && color2 == NULL) {
         report.arguments[1] = 0x03;         // Starlight effect type: random colors
@@ -1027,7 +1028,7 @@ int razer_init_data(struct razer_data *data)
 {
     // Set all values to an unset state.
     data->macro_keys_state  = -1;
-    data->fn_mode_state   = -1;
+    data->fn_mode_state     = -1;
 
     return 0;
 }

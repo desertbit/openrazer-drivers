@@ -67,6 +67,7 @@ Device files created by the driver in `/sys/bus/hid/drivers/hid-razer/${ID}`
 
 ## TODO
 
+- Add an extra install option for the udev rules.
 - Create a debian package.
 - BlackWidow Chroma: add support for game mode
 - Add information from https://github.com/pez2001/razer_chroma_drivers/wiki

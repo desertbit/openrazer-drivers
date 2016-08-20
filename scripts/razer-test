@@ -181,10 +181,10 @@ fi
 if [[ -e "$DEVICE_PATH/mode_starlight" ]]; then
     echo -e "${COLOR}set mode: ${NC} starlight"
     echo -e "random colors"
-    echo -e -n "\x03" > "$DEVICE_PATH/mode_starlight"
+    echo -e -n "\x01" > "$DEVICE_PATH/mode_starlight"
     sleep 5
     echo -e "one color"
-    echo -e -n "\x03\xFF\x00\xFF" > "$DEVICE_PATH/mode_starlight"
+    echo -e -n "\x02\xFF\x00\xFF" > "$DEVICE_PATH/mode_starlight"
     sleep 5
     echo -e "two colors"
     echo -e -n "\x03\xFF\x00\xFF\xFF\xFF\xFF" > "$DEVICE_PATH/mode_starlight"
