@@ -34,21 +34,21 @@ clean:
 	make -C $(KERNELDIR) SUBDIRS=$(DRIVERDIR) clean
 
 # Install kernel modules
-install: udev_install
+install:
 	@echo "\n::\033[34m Installing Razer kernel modules\033[0m"
 	@echo "====================================================="
 	@install -v -D -m 644 -g root -o root $(DRIVERDIR)/hid-razer-common.ko $(DESTDIR)/$(MODULEDIR)/hid-razer-common.ko
 	@install -v -D -m 644 -g root -o root $(DRIVERDIR)/hid-razer.ko $(DESTDIR)/$(MODULEDIR)/hid-razer.ko
 
 # Remove kernel modules
-uninstall: udev_uninstall
+uninstall:
 	@echo "\n::\033[34m Uninstalling Razer kernel modules\033[0m"
 	@echo "====================================================="
-	@rm -f $(DESTDIR)/$(MODULEDIR)/hid-razer-common.ko
-	@rm -f $(DESTDIR)/$(MODULEDIR)/hid-razer.ko
+	rm -f $(DESTDIR)/$(MODULEDIR)/hid-razer-common.ko
+	rm -f $(DESTDIR)/$(MODULEDIR)/hid-razer.ko
 
 # DKMS
-install_dkms: udev_install
+install_dkms:
 	@echo "\n::\033[34m Installing DKMS files\033[0m"
 	@echo "====================================================="
 	install -m 644 -v -D Makefile $(DESTDIR)/$(DKMSDIR)/Makefile
@@ -60,19 +60,19 @@ install_dkms: udev_install
 	rm -fv $(DESTDIR)/$(DKMSDIR)/src/*.mod.c
 	sed -i -e 's/VERSION_SET_BY_MAKEFILE/$(VERSION)/g' $(DESTDIR)/$(DKMSDIR)/dkms.conf
 
-uninstall_dkms: udev_uninstall
+uninstall_dkms:
 	@echo "\n::\033[34m Uninstalling DKMS files\033[0m"
 	@echo "====================================================="
 	rm -rfv $(DESTDIR)/$(DKMSDIR)
 
 # UDEV
-udev_install:
+install_udev:
 	@echo "\n::\033[34m Installing Razer udev rules\033[0m"
 	@echo "====================================================="
 	install -m 644 -v -D udev/99-razer.rules $(DESTDIR)/$(UDEVDIR)/rules.d/99-razer.rules
 	install -m 755 -v -D udev/razer_mount $(DESTDIR)/$(UDEVDIR)/razer_mount
 
-udev_uninstall:
+uninstall_udev:
 	@echo "\n::\033[34m Uninstalling Razer udev rules\033[0m"
 	@echo "====================================================="
 	rm -fv $(DESTDIR)/$(UDEVDIR)/rules.d/99-razer.rules

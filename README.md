@@ -26,7 +26,7 @@ All notable changes to this project will be documented in the **[CHANGELOG.md](C
 This requires DKMS to be installed.
 
 ```
-    make DESTDIR=/ install_dkms
+    make DESTDIR=/ install_udev install_dkms
 ```
 
 ### Manual installation
@@ -35,7 +35,7 @@ This requires recompilation on every kernel update.
 
 ```
     make all
-    make DESTDIR=/ install
+    make DESTDIR=/ install_udev install
 ```
 
 
