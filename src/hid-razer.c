@@ -79,10 +79,11 @@ int razer_get_firmware_version(struct razer_device *razer_dev,
 int razer_get_brightness(struct razer_device *razer_dev)
 {
 	int retval;
-	struct usb_device *usb_dev = razer_dev->usb_dev;
-	struct razer_report request_report = razer_new_report();
+	struct usb_device *usb_dev          = razer_dev->usb_dev;
+	struct razer_report request_report  = razer_new_report();
 	struct razer_report response_report;
-	int response_value_index = 1;
+	int response_value_index            = 1;
+	const unsigned char productID       = usb_dev->descriptor.idProduct;
 
 	request_report.command_class = 0x0E;
 	request_report.command_id    = 0x84;
@@ -90,7 +91,7 @@ int razer_get_brightness(struct razer_device *razer_dev)
 	request_report.arguments[0]  = 0x01;     // LED Class
 
 	// Device support.
-	if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
+	if (productID == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
 		request_report.command_class    = 0x03;
 		request_report.command_id       = 0x83;
 		request_report.arguments[1]     = 0x05;     // Backlight LED
@@ -116,8 +117,9 @@ int razer_set_brightness(struct razer_device *razer_dev,
 	unsigned char brightness)
 {
 	int retval;
-	struct usb_device *usb_dev = razer_dev->usb_dev;
-	struct razer_report report = razer_new_report();
+	struct usb_device *usb_dev    = razer_dev->usb_dev;
+	struct razer_report report    = razer_new_report();
+	const unsigned char productID = usb_dev->descriptor.idProduct;
 
 	report.command_class = 0x0E;
 	report.command_id    = 0x04;
@@ -126,7 +128,7 @@ int razer_set_brightness(struct razer_device *razer_dev,
 	report.arguments[1]  = brightness;
 
 	// Device support.
-	if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
+	if (productID == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
 		report.command_class    = 0x03;
 		report.command_id       = 0x03;
 		report.arguments[1]     = 0x05;     // Backlight LED
@@ -212,11 +214,13 @@ int razer_set_fn_mode(struct razer_device *razer_dev, unsigned char state)
 // On error a value smaller than 0 is returned.
 int razer_get_rows(struct usb_device *usb_dev)
 {
-	if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016) {
+	const unsigned char productID = usb_dev->descriptor.idProduct;
+
+	if (productID == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016) {
 		return RAZER_STEALTH_2016_ROWS;
-	} else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_14_2016) {
+	} else if (productID == USB_DEVICE_ID_RAZER_BLADE_14_2016) {
 		return RAZER_BLADE_14_2016_ROWS;
-	} else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
+	} else if (productID == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
 		return RAZER_BLACKWIDOW_CHROMA_ROWS;
 	} else {
 		return -EINVAL;
@@ -227,11 +231,13 @@ int razer_get_rows(struct usb_device *usb_dev)
 // On error a value smaller than 0 is returned.
 int razer_get_columns(struct usb_device *usb_dev)
 {
-	if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016) {
+	const unsigned char productID = usb_dev->descriptor.idProduct;
+
+	if (productID == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016) {
 		return RAZER_STEALTH_2016_COLUMNS;
-	} else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_14_2016) {
+	} else if (productID == USB_DEVICE_ID_RAZER_BLADE_14_2016) {
 		return RAZER_BLADE_14_2016_COLUMNS;
-	} else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
+	} else if (productID == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
 		return RAZER_BLACKWIDOW_CHROMA_COLUMNS;
 	} else {
 		return -EINVAL;
@@ -320,7 +326,8 @@ int razer_set_key_colors(struct razer_device *razer_dev,
 	return 0;
 }
 
-// Enable keyboard macro keys. Keycodes for the macro keys are 191-195 for M1-M5.
+// Enable keyboard macro keys.
+// Keycodes for the macro keys are 191-195 for M1-M5.
 int razer_activate_macro_keys(struct razer_device *razer_dev)
 {
 	int retval;
@@ -522,16 +529,16 @@ int razer_set_starlight_mode(struct razer_device *razer_dev,
 	report.arguments[2]  = speed;    // Speed
 
 	if (color1 == NULL && color2 == NULL) {
-		report.arguments[1] = 0x03;         // Starlight effect type: random colors
+		report.arguments[1] = 0x03;       // Random colors
 		report.data_size    = 0x03;
 	} else if (color1 != NULL && color2 == NULL) {
-		report.arguments[1] = 0x01;         // Starlight effect type: one color
+		report.arguments[1] = 0x01;       // One color
 		report.arguments[3] = color1->r;
 		report.arguments[4] = color1->g;
 		report.arguments[5] = color1->b;
 		report.data_size    = 0x06;
 	} else if (color1 != NULL && color2 != NULL) {
-		report.arguments[1] = 0x02;         // Starlight effect type: two colors
+		report.arguments[1] = 0x02;       // Two colors
 		report.arguments[3] = color1->r;
 		report.arguments[4] = color1->g;
 		report.arguments[5] = color1->b;
@@ -572,16 +579,16 @@ int razer_set_breath_mode(struct razer_device *razer_dev,
 	report.arguments[0]  = 0x03; // Effect ID
 
 	if (color1 == NULL && color2 == NULL) {
-		report.arguments[1] = 0x03;         // Breath effect type: random colors
+		report.arguments[1] = 0x03;       // Random colors
 		report.data_size    = 0x02;
 	} else if (color1 != NULL && color2 == NULL) {
-		report.arguments[1] = 0x01;         // Breath effect type: one color
+		report.arguments[1] = 0x01;       // One color
 		report.arguments[2] = color1->r;
 		report.arguments[3] = color1->g;
 		report.arguments[4] = color1->b;
 		report.data_size    = 0x05;
 	} else if (color1 != NULL && color2 != NULL) {
-		report.arguments[1] = 0x02;         // Breath effect type: two colors
+		report.arguments[1] = 0x02;       // Two colors
 		report.arguments[2] = color1->r;
 		report.arguments[3] = color1->g;
 		report.arguments[4] = color1->b;
@@ -844,7 +851,8 @@ static ssize_t razer_attr_write_set_key_colors(struct device *dev,
 	struct razer_device *razer_dev = dev_get_drvdata(dev);
 	int retval;
 
-	retval = razer_set_key_colors(razer_dev, (unsigned char *)&buf[0], count);
+	retval = razer_set_key_colors(razer_dev,
+			(unsigned char *)&buf[0], count);
 	if (retval != 0) {
 		return retval;
 	}
@@ -1102,14 +1110,14 @@ static DEVICE_ATTR(set_key_colors,  0220, NULL, razer_attr_write_set_key_colors)
 static DEVICE_ATTR(get_key_rows,    0444, razer_attr_read_get_key_rows, NULL);
 static DEVICE_ATTR(get_key_columns, 0444, razer_attr_read_get_key_columns, NULL);
 
-static DEVICE_ATTR(mode_none,       0220, NULL, razer_attr_write_mode_none);
-static DEVICE_ATTR(mode_static,     0220, NULL, razer_attr_write_mode_static);
-static DEVICE_ATTR(mode_custom,     0220, NULL, razer_attr_write_mode_custom);
-static DEVICE_ATTR(mode_wave,       0220, NULL, razer_attr_write_mode_wave);
-static DEVICE_ATTR(mode_spectrum,   0220, NULL, razer_attr_write_mode_spectrum);
-static DEVICE_ATTR(mode_reactive,   0220, NULL, razer_attr_write_mode_reactive);
-static DEVICE_ATTR(mode_breath,     0220, NULL, razer_attr_write_mode_breath);
-static DEVICE_ATTR(mode_starlight,  0220, NULL, razer_attr_write_mode_starlight);
+static DEVICE_ATTR(mode_none,      0220, NULL, razer_attr_write_mode_none);
+static DEVICE_ATTR(mode_static,    0220, NULL, razer_attr_write_mode_static);
+static DEVICE_ATTR(mode_custom,    0220, NULL, razer_attr_write_mode_custom);
+static DEVICE_ATTR(mode_wave,      0220, NULL, razer_attr_write_mode_wave);
+static DEVICE_ATTR(mode_spectrum,  0220, NULL, razer_attr_write_mode_spectrum);
+static DEVICE_ATTR(mode_reactive,  0220, NULL, razer_attr_write_mode_reactive);
+static DEVICE_ATTR(mode_breath,    0220, NULL, razer_attr_write_mode_breath);
+static DEVICE_ATTR(mode_starlight, 0220, NULL, razer_attr_write_mode_starlight);
 
 
 
@@ -1177,6 +1185,7 @@ static int razer_probe(struct hid_device *hdev,
 	struct usb_device *usb_dev      = interface_to_usbdev(intf);
 	struct razer_device *razer_dev;
 	struct razer_data *data;
+	const unsigned char productID   = usb_dev->descriptor.idProduct;
 
 	razer_dev = kzalloc(sizeof(struct razer_device), GFP_KERNEL);
 	if (!razer_dev) {
@@ -1224,8 +1233,8 @@ static int razer_probe(struct hid_device *hdev,
 
 
 	// Custom files depending on the device support.
-	if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016 ||
-		usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_14_2016) {
+	if (productID == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016 ||
+		productID == USB_DEVICE_ID_RAZER_BLADE_14_2016) {
 		// Set the default fn mode state.
 		data->fn_mode_state = 1;
 
@@ -1270,7 +1279,7 @@ static int razer_probe(struct hid_device *hdev,
 		retval = device_create_file(dev, &dev_attr_mode_starlight);
 		if (retval)
 			goto exit_free;
-	} else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
+	} else if (productID == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
 		// Enable the macro keys state.
 		data->macro_keys_state = 1;
 
@@ -1346,6 +1355,7 @@ static void razer_disconnect(struct hid_device *hdev)
 	struct usb_device *usb_dev      = interface_to_usbdev(intf);
 	struct razer_device *razer_dev  = dev_get_drvdata(dev);
 	struct razer_data *data         = razer_dev->data;
+	const unsigned char productID   = usb_dev->descriptor.idProduct;
 
 	// Remove the default files
 	device_remove_file(dev, &dev_attr_get_firmware_version);
@@ -1355,8 +1365,8 @@ static void razer_disconnect(struct hid_device *hdev)
 
 
 	// Custom files depending on the device support.
-	if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016 ||
-		usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLADE_14_2016) {
+	if (productID == USB_DEVICE_ID_RAZER_BLADE_STEALTH_2016 ||
+		productID == USB_DEVICE_ID_RAZER_BLADE_14_2016) {
 		device_remove_file(dev, &dev_attr_fn_mode);
 		device_remove_file(dev, &dev_attr_get_key_rows);
 		device_remove_file(dev, &dev_attr_get_key_columns);
@@ -1372,7 +1382,7 @@ static void razer_disconnect(struct hid_device *hdev)
 		device_remove_file(dev, &dev_attr_mode_reactive);
 		device_remove_file(dev, &dev_attr_mode_breath);
 		device_remove_file(dev, &dev_attr_mode_starlight);
-	} else if (usb_dev->descriptor.idProduct == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
+	} else if (productID == USB_DEVICE_ID_RAZER_BLACKWIDOW_CHROMA) {
 		device_remove_file(dev, &dev_attr_get_key_rows);
 		device_remove_file(dev, &dev_attr_get_key_columns);
 		device_remove_file(dev, &dev_attr_set_key_colors);
