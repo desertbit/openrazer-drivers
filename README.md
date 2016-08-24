@@ -1,5 +1,7 @@
 # Razer Drivers
 
+[![Join the chat at https://gitter.im/openrazer/General](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/openrazer/General?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 **This is a complete rewrite and cleanup based on the [openrazer-drivers-legacy](https://github.com/openrazer/openrazer-drivers-legacy) project. If you are missing a specific device support, don't hesitate to contact me.**
 
 This repository holds the source code for the linux kernel drivers to support various Razer devices.
