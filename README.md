@@ -2,7 +2,7 @@
 
 [![Join the chat at https://gitter.im/openrazer/General](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/openrazer/General?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-**This is a complete rewrite and cleanup based on the [openrazer-drivers-legacy](https://github.com/openrazer/openrazer-drivers-legacy)/[razer_chroma_drivers](https://github.com/pez2001/razer_chroma_drivers) project. If you are missing a specific device support, don't hesitate to contact me.**
+**This is a complete rewrite and cleanup based on the [openrazer-drivers-legacy](https://github.com/openrazer/openrazer-drivers-legacy)/[razer_chroma_drivers](https://github.com/pez2001/razer_chroma_drivers) project. If you are missing a specific device support, don't hesitate to [contact me](https://gitter.im/openrazer/General).**
 
 This repository holds the source code for the linux kernel drivers to support various Razer devices.
 All notable changes to this project will be documented in the **[CHANGELOG.md](CHANGELOG.md)** file.
